@@ -91,10 +91,11 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
     val reducedMotion = effectiveReducedMotion(state.preferences.reduceMotion)
     val exportSettings = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> uri?.let(viewModel::exportSettings) }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
-        val rail = maxWidth >= 1000.dp && LocalDensity.current.fontScale < 1.6f
+        val rail = maxWidth >= 840.dp && LocalDensity.current.fontScale < 1.6f
+        val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
         Row(Modifier.fillMaxSize()) {
             if (rail) {
-                Box(Modifier.width(128.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
+                Box(Modifier.width(104.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
                     FloatingDock(selectedRoute, state.preferences.reduceMotion, state.preferences.glassIntensity,
                         onSelect = { destination -> nav.navigate(destination.route) {
                             popUpTo(nav.graph.findStartDestination().id) { saveState = true }
@@ -116,26 +117,26 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
                 }
             }
         }
-        if (!rail) {
+        if (!rail && !keyboardOpen) {
             FloatingDock(selectedRoute, state.preferences.reduceMotion, state.preferences.glassIntensity,
                 onSelect = { destination -> nav.navigate(destination.route) {
                     popUpTo(nav.graph.findStartDestination().id) { saveState = true }
                     launchSingleTop = true; restoreState = true
-                } }, modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 14.dp, vertical = 12.dp).widthIn(max = 560.dp).fillMaxWidth())
+                } }, modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp).widthIn(max = 680.dp).fillMaxWidth())
         }
-        if (WindowInsets.ime.getBottom(LocalDensity.current) == 0) CompanionDock(state, onNavigate = { route -> nav.navigate(route) { launchSingleTop = true } },
+        if (!keyboardOpen && selectedRoute == "home") CompanionDock(state, onNavigate = { route -> nav.navigate(route) { launchSingleTop = true } },
             onHide = { viewModel.setCompanionEnabled(false) },
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = if (rail) 24.dp else 112.dp))
-        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = if (rail) 128.dp else 0.dp, bottom = if (rail) 16.dp else 102.dp))
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = if (rail) 20.dp else 104.dp))
+        SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = if (rail) 104.dp else 0.dp, bottom = if (rail || keyboardOpen) 12.dp else 100.dp))
     }
 }
 
 @Composable
 internal fun ScreenBody(content: @Composable ColumnScope.() -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(Modifier.widthIn(max = 920.dp).fillMaxWidth().fillMaxHeight(),
-            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 142.dp)) {
-            item { Column(verticalArrangement = Arrangement.spacedBy(27.dp), content = content) }
+        LazyColumn(Modifier.widthIn(max = 1260.dp).fillMaxWidth().fillMaxHeight(),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 126.dp)) {
+            item { Column(verticalArrangement = Arrangement.spacedBy(22.dp), content = content) }
         }
     }
 }
@@ -143,9 +144,9 @@ internal fun ScreenBody(content: @Composable ColumnScope.() -> Unit) {
 @Composable
 internal fun ScreenList(content: LazyListScope.() -> Unit) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        LazyColumn(Modifier.widthIn(max = 920.dp).fillMaxWidth().fillMaxHeight(),
-            contentPadding = PaddingValues(start = 24.dp, end = 24.dp, top = 24.dp, bottom = 142.dp),
-            verticalArrangement = Arrangement.spacedBy(27.dp), content = content)
+        LazyColumn(Modifier.widthIn(max = 1260.dp).fillMaxWidth().fillMaxHeight(),
+            contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 18.dp, bottom = 126.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp), content = content)
     }
 }
 
