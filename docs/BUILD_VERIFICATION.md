@@ -33,6 +33,6 @@ The software emulator failed in the stock Android framework before full boot. No
 
 ## Repository
 
-The local Git repository is configured with origin `https://github.com/honey22062009-cmyk/Auto-reply.git`. Both Git push and GitHub Contents API writes returned HTTP403 on this session despite successful read/authentication checks. No remote upload or CI execution is claimed until write authorization succeeds.
+Source and Git history were successfully pushed to `https://github.com/honey22062009-cmyk/Auto-reply.git` on 2026-10-30 after write access was restored. The initial GitHub Actions run failed during SDK setup because the setup action requested the obsolete `tools` package; both workflows now explicitly request `platform-tools`. Remote CI outcomes are tracked separately from the successful local verification above.
 
 Generated APKs, caches, local toolchain configuration, signing keys, and raw build logs are excluded from source control. The workflow uploads build artifacts after successful verification when it can run in GitHub.
