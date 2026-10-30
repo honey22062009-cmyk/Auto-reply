@@ -1,8 +1,9 @@
 name: Android device tests
 
-# Explicitly launched by the owner; this workflow has not been run by development tools.
+# Execute real Compose navigation checks on proposed UI changes as well as manual requests.
 on:
   workflow_dispatch:
+  pull_request:
 
 permissions:
   contents: read
