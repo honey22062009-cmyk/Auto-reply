@@ -19,6 +19,10 @@ import dev.veil.app.domain.PriorityContact
 @Composable
 internal fun ContactRuleDialog(contact: PriorityContact, onDismiss: () -> Unit, onSave: (PriorityContact) -> Unit) {
     var label by rememberSaveable(contact.id) { mutableStateOf(contact.label) }
+    var sender by rememberSaveable(contact.id) { mutableStateOf(contact.sender) }
+    var username by rememberSaveable(contact.id) { mutableStateOf(contact.instagramUsername) }
+    var userId by rememberSaveable(contact.id) { mutableStateOf(contact.instagramUserId) }
+    var phone by rememberSaveable(contact.id) { mutableStateOf(contact.whatsappPhone) }
     var auto by rememberSaveable(contact.id) { mutableStateOf(contact.autoEnabled) }
     var paused by rememberSaveable(contact.id) { mutableStateOf(contact.paused) }
     var cooldown by rememberSaveable(contact.id) { mutableStateOf(contact.cooldownSeconds.toString()) }
@@ -29,56 +33,95 @@ internal fun ContactRuleDialog(contact: PriorityContact, onDismiss: () -> Unit, 
     var quietStart by rememberSaveable(contact.id) { mutableStateOf(contact.quietStartHour.toString()) }
     var quietEnd by rememberSaveable(contact.id) { mutableStateOf(contact.quietEndHour.toString()) }
     var instruction by rememberSaveable(contact.id) { mutableStateOf(contact.instruction) }
+    var advanced by rememberSaveable(contact.id) { mutableStateOf(false) }
     var consent by rememberSaveable(contact.id) { mutableStateOf(false) }
-    val eligible = contact.identityKey != null && contact.compatibilityVerified
+    val hints = dev.veil.app.data.ContactReferenceHints.sanitize(contact.app, username, userId, phone)
+    val identityChanged = sender.trim() != contact.sender ||
+        hints?.instagramUsername != contact.instagramUsername ||
+        hints?.instagramUserId != contact.instagramUserId ||
+        hints?.whatsappPhone != contact.whatsappPhone
+    val eligible = contact.identityKey != null && contact.compatibilityVerified && !identityChanged
+    val autoToSave = auto && eligible
     fun within(value: String, range: IntRange) = value.toIntOrNull()?.let { it in range } == true
-    val valid = label.isNotBlank() && within(cooldown, 0..86_400) &&
-        within(hour, 1..100) && within(day, 1..1000) &&
-        within(conversation, 1..100) && within(quietStart, 0..23) &&
-        within(quietEnd, 0..23) && (!auto || contact.autoEnabled || consent)
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Rules for ${contact.label}") },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            OutlinedTextField(label, { if (it.length <= 80) label = it }, label = { Text("Local contact label") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Text("${contact.app.label} · ${contact.sender}", style = MaterialTheme.typography.bodyMedium)
+    val valid = label.isNotBlank() && label.length <= 80 &&
+        sender.isNotBlank() && sender.length <= 160 && hints != null &&
+        within(cooldown, 0..86_400) && within(hour, 1..100) &&
+        within(day, 1..1000) && within(conversation, 1..100) &&
+        within(quietStart, 0..23) && within(quietEnd, 0..23) &&
+        (!autoToSave || contact.autoEnabled || consent)
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Edit ${contact.label}") },
+        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(13.dp)) {
+            OutlinedTextField(label, { label = it.take(80) }, label = {
+                Text(if (contact.app == dev.veil.app.domain.MessagingApp.WHATSAPP) "Name saved on device" else "Person's display name")
+            }, singleLine = true, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(sender, { sender = it.take(160) }, label = { Text("Exact notification sender") },
+                singleLine = true, modifier = Modifier.fillMaxWidth())
+            if (contact.app == dev.veil.app.domain.MessagingApp.WHATSAPP) {
+                OutlinedTextField(phone, { phone = it.take(22) }, label = { Text("Phone number (optional)") },
+                    singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    isError = hints == null, modifier = Modifier.fillMaxWidth())
+            } else {
+                OutlinedTextField(username, { username = it.take(31) }, label = { Text("Instagram username") },
+                    singleLine = true, isError = hints == null, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(userId, { userId = it.take(32) }, label = { Text("Numeric user ID (optional)") },
+                    singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    isError = hints == null, modifier = Modifier.fillMaxWidth())
+            }
+            if (identityChanged) {
+                Text("Changing the sender or account details turns off auto-reply and requires a new notification binding.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+            }
+            HorizontalDivider()
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Automatic replies", style = MaterialTheme.typography.titleSmall)
-                    Text(if (eligible) "Enables real replies under your safety rules." else "Bind stable metadata and complete a test with recipient confirmation first.",
+                    Text(if (eligible) "Only after your safety rules pass." else "Verify a notification and a consenting test reply first.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Switch(auto, { auto = it }, enabled = eligible || auto,
+                Switch(autoToSave, { auto = it }, enabled = eligible,
                     modifier = Modifier.semantics { contentDescription = "Automatic replies for ${contact.label}" })
             }
-            if (auto && !contact.autoEnabled) Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(consent, { consent = it }, modifier = Modifier.semantics { contentDescription = "I authorize automatic replies to this contact" })
-                Text("I authorize VEIL to send suitable replies to this contact when all rules permit.", style = MaterialTheme.typography.bodySmall)
+            if (autoToSave && !contact.autoEnabled) Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(consent, { consent = it }, modifier = Modifier.semantics {
+                    contentDescription = "I authorize automatic replies to this contact"
+                })
+                Text("Allow suitable, verified automatic replies for this person.", style = MaterialTheme.typography.bodySmall)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Pause this contact", Modifier.weight(1f)); Switch(paused, { paused = it })
+                Text("Pause this person", Modifier.weight(1f))
+                Switch(paused, { paused = it })
             }
-            NumberSetting("Cooldown in seconds", cooldown, { cooldown = it }, "0–86400 seconds")
-            NumberSetting("Maximum replies per hour", hour, { hour = it }, "1–100")
-            NumberSetting("Maximum replies per day", day, { day = it }, "1–1000")
-            NumberSetting("Maximum replies per conversation per day", conversation, { conversation = it }, "1–100")
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Quiet hours", Modifier.weight(1f)); Switch(quiet, { quiet = it })
+            TextButton(onClick = { advanced = !advanced }) {
+                Text(if (advanced) "Hide advanced rules" else "Advanced rules")
             }
-            if (quiet) {
-                NumberSetting("Quiet hours start", quietStart, { quietStart = it }, "Hour 0–23 in the tablet's current time zone")
-                NumberSetting("Quiet hours end", quietEnd, { quietEnd = it }, "Hour 0–23; a range can cross midnight")
+            if (advanced) {
+                NumberSetting("Cooldown (seconds)", cooldown, { cooldown = it }, "0–86400")
+                NumberSetting("Maximum replies/hour", hour, { hour = it }, "1–100")
+                NumberSetting("Maximum replies/day", day, { day = it }, "1–1000")
+                NumberSetting("Maximum per conversation/day", conversation, { conversation = it }, "1–100")
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Quiet hours", Modifier.weight(1f))
+                    Switch(quiet, { quiet = it })
+                }
+                if (quiet) {
+                    NumberSetting("Quiet hours start", quietStart, { quietStart = it }, "0–23, device local time")
+                    NumberSetting("Quiet hours end", quietEnd, { quietEnd = it }, "0–23, can cross midnight")
+                }
+                OutlinedTextField(instruction, { instruction = it.take(1000) },
+                    label = { Text("Writing-style notes") },
+                    modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 4)
+                Text("Sensitive or uncertain messages always need review. Global caps also apply. Android dispatch does not prove receipt.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            OutlinedTextField(instruction, { if (it.length <= 1000) instruction = it }, label = { Text("Contact-specific style notes") },
-                supportingText = { Text("Preferences only. These notes cannot override safety rules or supply unknown facts.") },
-                modifier = Modifier.fillMaxWidth(), minLines = 2, maxLines = 5)
-            Text("Sensitive or uncertain messages require review. Global safety caps of 10 automatic replies per hour and 30 per day also apply. Conversation limits reset at local midnight. Android dispatch does not prove receipt.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } },
         confirmButton = { TextButton(enabled = valid, onClick = {
-            onSave(contact.copy(label = label.trim(), autoEnabled = auto, paused = paused,
+            onSave(contact.copy(label = label.trim(), sender = sender.trim(),
+                instagramUsername = hints!!.instagramUsername, instagramUserId = hints.instagramUserId,
+                whatsappPhone = hints.whatsappPhone, autoEnabled = autoToSave, paused = paused,
                 cooldownSeconds = cooldown.toInt(), maxPerHour = hour.toInt(), maxPerDay = day.toInt(),
                 maxPerConversation = conversation.toInt(), quietEnabled = quiet, quietStartHour = quietStart.toInt(),
                 quietEndHour = quietEnd.toInt(), instruction = instruction.trim()))
-        }) { Text("Save contact rules") } },
+        }) { Text("Save") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
