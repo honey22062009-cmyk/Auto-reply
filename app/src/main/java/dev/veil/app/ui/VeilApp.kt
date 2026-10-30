@@ -54,7 +54,7 @@ fun VeilApp(viewModel: VeilViewModel) {
         lifecycle.lifecycle.addObserver(observer)
         onDispose { lifecycle.lifecycle.removeObserver(observer) }
     }
-    VeilTheme(state.preferences.appearance) {
+    VeilTheme(state.preferences.appearance, state.preferences.accent, state.preferences.glassIntensity) {
         Surface(color = MaterialTheme.colorScheme.background) {
             Box(Modifier.fillMaxSize()) {
                 VeilBackdrop(Modifier.matchParentSize())
@@ -87,6 +87,9 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
     }
     val goLab = { nav.navigate("lab") { launchSingleTop = true } }
     val goInbox = { nav.navigate("inbox") { launchSingleTop = true } }
+    val goAi = { nav.navigate("ai") { launchSingleTop = true } }
+    val reducedMotion = effectiveReducedMotion(state.preferences.reduceMotion)
+    val exportSettings = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> uri?.let(viewModel::exportSettings) }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
         val rail = maxWidth >= 1000.dp && LocalDensity.current.fontScale < 1.6f
         Row(Modifier.fillMaxSize()) {
@@ -101,13 +104,14 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
             }
             Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
                 NavHost(nav, startDestination = "home", modifier = Modifier.fillMaxSize(),
-                    enterTransition = { fadeIn(tween(if (state.preferences.reduceMotion) 0 else 180)) },
-                    exitTransition = { fadeOut(tween(if (state.preferences.reduceMotion) 0 else 120)) }) {
-                    composable("home") { HomeScreen(state, viewModel::setCapturePaused, goLab, goInbox) }
+                    enterTransition = { fadeIn(tween(if (reducedMotion) 0 else 180)) },
+                    exitTransition = { fadeOut(tween(if (reducedMotion) 0 else 120)) }) {
+                    composable("home") { HomeScreen(state, viewModel::setCapturePaused, goLab, goInbox, goAi) }
                     composable("inbox") { InboxScreen(state, viewModel, goLab) }
                     composable("priority") { PriorityScreen(state, viewModel) }
                     composable("activity") { ActivityScreen(state, goLab) }
-                    composable("settings") { SettingsScreen(state, viewModel, goLab) }
+                    composable("settings") { SettingsScreen(state, viewModel, goLab, goAi, onExportSettings = { exportSettings.launch("veil-settings.json") }) }
+                    composable("ai") { AiStudioScreen(state, viewModel, onBack = { nav.popBackStack() }) }
                     composable("lab") { CompatibilityLab(state, viewModel, onBack = { nav.popBackStack() }, onExport = { export.launch("veil-diagnostics.json") }, onInbox = goInbox) }
                 }
             }
@@ -119,6 +123,9 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
                     launchSingleTop = true; restoreState = true
                 } }, modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 14.dp, vertical = 12.dp).widthIn(max = 560.dp).fillMaxWidth())
         }
+        if (WindowInsets.ime.getBottom(LocalDensity.current) == 0) CompanionDock(state, onNavigate = { route -> nav.navigate(route) { launchSingleTop = true } },
+            onHide = { viewModel.setCompanionEnabled(false) },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = if (rail) 24.dp else 112.dp))
         SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter).padding(start = if (rail) 128.dp else 0.dp, bottom = if (rail) 16.dp else 102.dp))
     }
 }
@@ -173,11 +180,11 @@ internal fun VeilOnboarding(system: SystemSnapshot, onFinish: (Set<MessagingApp>
                             Text("A private messaging companion, built around your control.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             GlassPanel {
                                 Eyebrow("Start with certainty")
-                                Text("Meet the Compatibility Lab", style = MaterialTheme.typography.titleLarge)
+                                Text("Start with a clear boundary", style = MaterialTheme.typography.titleLarge)
                                 Text("First, discover what your installed messaging apps actually share with Android.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 InfoRow(Icons.Outlined.NotificationsNone, "Notification-based", "VEIL sees accessible notifications, not your full inbox.")
-                                InfoRow(Icons.Outlined.TouchApp, "Every test is yours", "You review and confirm each fixed test reply. Automatic replies are off in this version.")
-                                InfoRow(Icons.Outlined.Lock, "Private by design", "No network permission. Sensitive stored content is encrypted on this device.")
+                                InfoRow(Icons.Outlined.TouchApp, "You stay in control", "Review suggestions before sending. Automation starts off and requires explicit contact rules.")
+                                InfoRow(Icons.Outlined.Lock, "Private by design", "Sensitive stored content is encrypted. Optional cloud replies require your separate opt-in.")
                             }
                         }
                         1 -> {
@@ -188,7 +195,7 @@ internal fun VeilOnboarding(system: SystemSnapshot, onFinish: (Set<MessagingApp>
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .45f))
                                 PlatformToggle(MessagingApp.INSTAGRAM, instagram, { instagram = it }, system)
                             }
-                            Text("Notification sender names and previews stay local. History is kept for 1 day by default; you can change retention or delete it in Settings. No analytics, advertising, or cloud AI.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("History is kept for 1 day by default. Templates stay local. OpenAI receives selected message content only after your explicit cloud opt-in; no analytics or advertising is included.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         2 -> {
                             Text("Notification access.\nOn your terms.", style = MaterialTheme.typography.displaySmall)

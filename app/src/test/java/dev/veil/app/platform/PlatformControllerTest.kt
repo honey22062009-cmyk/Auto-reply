@@ -50,6 +50,19 @@ class PlatformControllerTest {
         assertTrue(sink.observations.isEmpty())
     }
 
+    @Test fun `capture stop latch ignores older unpaused preferences until explicit resume`() {
+        val platform = controller
+        val enabled = VeilPreferences(onboarded = true, enabledApps = setOf(MessagingApp.WHATSAPP))
+        platform.configure(enabled)
+        platform.setCaptureStop(true)
+        platform.configure(enabled)
+        platform.observed(notification())
+        assertTrue(sink.observations.isEmpty())
+        platform.setCaptureStop(false)
+        platform.observed(notification())
+        assertEquals(1, sink.observations.size)
+    }
+
     @Test fun `notification removal emits only a hash`() {
         val platform = controller
         platform.removed(notification())

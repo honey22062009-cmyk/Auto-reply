@@ -59,17 +59,31 @@ internal object NotificationInspector {
         val conversation = clean(style?.conversationTitle ?: extras.getCharSequence(Notification.EXTRA_CONVERSATION_TITLE))
         val isGroup = style?.isGroupConversation ?: extras.getBoolean(Notification.EXTRA_IS_GROUP_CONVERSATION, false)
         val messageAt = latest?.timestamp?.takeIf { it > 0L }
-        val conversationIdentity = notification.shortcutId?.takeIf { it.isNotBlank() } ?: sbn.key
+        val shortcutIdentity = notification.shortcutId?.takeIf { it.isNotBlank() }
+        val conversationIdentity = shortcutIdentity ?: sbn.key
         val keyHash = digest(sbn.key)
-        val senderIdentity = latest?.person?.key?.takeIf { it.isNotBlank() }
-            ?: latest?.person?.uri?.takeIf { it.isNotBlank() }
-            ?: sender.orEmpty()
-        val id = digest(app.packageName, conversationIdentity, senderIdentity, sender.orEmpty(), preview.orEmpty(),
+        val personKey = latest?.person?.key?.takeIf { it.isNotBlank() }
+        val personUri = latest?.person?.uri?.takeIf { it.isNotBlank() }
+        val stableSenderIdentity = personKey ?: personUri
+        val stableSenderKind = when { personKey != null -> "person-key"; personUri != null -> "person-uri"; else -> "shortcut-only" }
+        val senderIdentity = stableSenderIdentity ?: sender.orEmpty()
+        // A visible name and a notification's recyclable system key are not identity proof.
+        // Only app-exposed Person identifiers or conversation shortcuts permit explicit binding.
+        // Namespace by source UID/profile and identifier type; reinstall/rebinding fails closed.
+        val sourceUid = if (Build.VERSION.SDK_INT >= 29) sbn.uid else null
+        val identityKey = if (sourceUid == null || (stableSenderIdentity == null && shortcutIdentity == null)) null
+            else digest("veil-recipient-v1", app.packageName, sourceUid.toString(), stableSenderKind,
+                stableSenderIdentity.orEmpty(), shortcutIdentity.orEmpty())
+        val id = if (!isGroup && identityKey != null && messageAt != null)
+            digest(app.packageName, identityKey, preview.orEmpty(), messageAt.toString())
+        else if (isGroup) digest(app.packageName, conversationIdentity, conversation.orEmpty(), senderIdentity,
+            sender.orEmpty(), preview.orEmpty(), messageAt?.toString().orEmpty())
+        else digest(app.packageName, conversationIdentity, senderIdentity, sender.orEmpty(), preview.orEmpty(),
             messageAt?.toString().orEmpty())
         val reply = selectReply(notification.actions.orEmpty(), app.packageName)
         return InspectedNotification(
             observation = ObservedNotification(id, keyHash, app, sender, preview, sbn.postTime, messageAt,
-                style != null, isGroup, notification.actions?.size ?: 0, reply != null, conversation),
+                style != null, isGroup, notification.actions?.size ?: 0, reply != null, conversation, identityKey),
             rawKey = sbn.key,
             reply = reply,
             contentIntent = notification.contentIntent?.takeIf { it.creatorPackage == app.packageName },

@@ -1,53 +1,65 @@
-# VEIL Phase 1 security and privacy notes
+# VEIL Version 1 security and privacy
 
-This is a private compatibility build, not a completed security certification. The safeguards below are scoped to Phase 1. Actual-device notification behavior remains unverified until the owner performs the [device test guide](DEVICE_TEST_GUIDE.md).
+These notes describe implemented boundaries, not a security certification or an assertion that an untested device/provider works. Read the revision-specific [verification record](BUILD_VERIFICATION.md) and perform the [device test guide](DEVICE_TEST_GUIDE.md) on the actual tablet.
 
-## Permission and data boundaries
+## Permissions and account boundaries
 
-- VEIL uses the separate package `dev.veil.app`. It does not use Strict Blocker's configuration, repository, signing identity, payments, or Firebase project.
-- The owner grants notification-listener access through Android settings. This is broad system access: Android can expose sensitive notifications to a listener. VEIL filters to the supported, explicitly enabled package names before recording content, but that application-level filter does not reduce the underlying Android permission's breadth.
-- Phase 1 does not request Internet, Accessibility Service, SMS, contacts, microphone, camera, or all-files access. It does not sign in to WhatsApp, Instagram, ChatGPT, or an AI provider. There are no account passwords or API keys to enter.
-- Only notification-derived information is available. Hidden previews, unavailable sender information, complete conversation history, and verified delivery receipts cannot be inferred.
-- Diagnostic exports are owner-initiated and must omit message text, sender labels, conversation identifiers, raw notification extras, and credentials. Review any exported file before choosing a share destination.
+VEIL uses application ID `dev.veil.app`, separate from Strict Blocker and its signing/configuration/accounts. It uses Android's supported `NotificationListenerService`, notification actions, and `RemoteInput`. It does not collect WhatsApp/Instagram passwords, inspect their private storage, use private APIs, scrape web sessions, or automate their screens.
 
-## Local persistence
+Android notification access is broad. VEIL filters to supported, explicitly enabled packages before examining their extras; that application filter does not narrow Android's underlying permission. Hidden previews and Android redaction are respected. Obvious credential/OTP-related preview content is not retained for drafting, but the guard is a conservative heuristic rather than proof that every secret can be recognized.
 
-Room holds bounded notification observations, event records, and explicitly entered priority labels. DataStore holds local preferences. Sensitive text fields use AES-GCM envelopes backed by a non-exportable Android Keystore key. Authentication failure or an unavailable key returns no plaintext rather than guessing content. This is **field encryption**, not an encrypted Room database: platform identifiers, timestamps, state flags, and lookup/fingerprint metadata may remain visible to someone who can access the app's private files.
+Internet permission supports optional OpenAI HTTPS requests. The default template engine uses no network. There is no central message-collection server, analytics service, advertising SDK, or tracking service. No Accessibility Service, SMS, contacts, microphone, camera, or all-files permission is requested. The installed ChatGPT app is not a credential source or an unofficial background API.
 
-The Keystore key is not user-authentication-bound in this milestone, so background capture can encrypt data without repeatedly prompting the owner. Hardware-backed key storage is device-dependent and is not claimed without measurement. Android app sandboxing and the device's lock and storage protections still matter. A rooted, compromised, unlocked, or debug-authorized device can expose runtime data. A debug APK is intended for testing, not high-assurance private deployment.
+## Stored data
 
-Default retained history is one day; the settings limit is one to seven days, with bounded record counts. Purging happens when the application processes/maintains data; it is not a promise that an idle or force-stopped device erases data at an exact deadline. The owner can delete history and delete contact labels. Deletion removes application records; it does not claim forensic secure erasure of flash storage, Android's own notification history, the source messaging apps, recipient copies, or an exported report.
+Room stores bounded notification observations, generated drafts, contact rules, activity events, and a separate dispatch ledger. DataStore stores preferences and encrypted writing-style content. The optional API key is stored only as an AES-GCM envelope in private preferences. Sensitive text fields use a non-exportable Android Keystore key.
 
-## Controlled sending
+This is **field encryption**, not whole-database encryption. Package names, timestamps, hashed identities/fingerprints, counters, dispatch kinds, and state flags remain structured metadata. The key is not user-authentication-bound, allowing background encryption without repeated prompts. Hardware-backed key storage is device-dependent. A rooted, compromised, debug-authorized, or unlocked device may expose runtime data. No code-level control replaces the owner's device security.
 
-There is no automatic send path in Phase 1. A reply test requires the owner to select an observed message and confirm a consenting test contact. The fixed test text is recognizable and does not pretend to answer the incoming message. Copying text or opening the source app is available when supported dispatch is absent; the owner verifies the recipient in that app.
+The default visible-history retention is one day, with one/three/seven-day settings and bounded record counts. Purging occurs during normal maintenance, app foreground work, or processing; force-stop/idle conditions do not promise erasure at an exact wall-clock deadline. Deleting history clears retained messages, drafts, and activity plus live reply handles. It retains a **content-free dispatch ledger for up to 30 days** so replayed callbacks cannot resend previously attempted messages or reset reply caps. Contact deletion also does not erase this safety metadata. Contact labels and writing preferences remain until explicitly removed or the app's storage is cleared.
 
-The sending boundary must recheck all of the following immediately before using a live reply action:
+Deletion is not forensic secure erasure of flash, source-app content, Android notification history, recipient copies, or exported files. Android backup/data transfer are excluded in the manifest/configuration. The activity uses `FLAG_SECURE` to restrict screenshots and recent-app previews; this is not a guarantee against all capture mechanisms on every device. Clipboard contents copied by the owner remain subject to Android and other-app behavior.
 
-- Onboarding is complete, capture is not paused, the platform is enabled, and notification access/listener connection are valid.
-- A usable, active, non-group message has a visible sender and preview.
-- The notification still matches the reviewed observation; a replacement, removal, local-user reply, or stale process handle invalidates it.
-- A supported free-form reply action exists, belongs to the originating app, and does not require bypassing device authentication or mutability restrictions.
-- The observation has not already had a test attempt. Concurrent taps must serialize into at most one attempt.
+## Manual sending and compatibility tests
 
-Persisting an attempt before dispatch deliberately avoids an automatic retry after an uncertain process failure. A failed or uncertain test requires a fresh incoming test message and a new owner action. This trades convenience for protection from duplicate real messages.
+A normal reply requires review of the exact recipient and edited text and explicit confirmation in the UI. A recognizable compatibility-test reply separately requires a consenting test contact. Copy/open-app fallback remains available when an action is absent. Group replies, missing sender/preview information, expired notifications, disconnected access, locked devices, unsupported actions, and invalid text are rejected at the sending boundary.
 
-An accepted Android `PendingIntent` is recorded as **Accepted by Android**. It is never labeled delivered. Receipt can only be recorded as an owner's independent report in this milestone; there is no delivery-receipt integration.
+The platform re-reads the active notification immediately before dispatch, checks the same fingerprint and supported mutable free-form reply action, validates originating-app ownership, and rechecks stop controls immediately before IPC. Raw PendingIntents and notification keys remain memory-only. Removal, replacement, outgoing-local-user updates, disconnects, pause, and process loss invalidate their authority.
 
-## Diagnostics and logs
+The repository records a durable attempt **before** IPC. Manual, test, and automatic sends share at-most-once protection. A failed or interrupted dispatch is never retried automatically; an uncertain result stays uncertain rather than implying either delivery or safe retry. Sending through another linked device cannot always be observed, so notification access never guarantees knowledge of all owner replies.
 
-Do not log message content, sender names, full notification bundles, reply text, credentials, or raw exception payloads. Sanitized app/version, device-capability, connection, count, and dispatch-stage information is sufficient for the compatibility report. Even that information can identify a device configuration, so export remains explicit.
+Android accepting a PendingIntent is recorded as **Accepted by Android**. Receipt is available only as an owner-supplied report, not independent verification. The app never upgrades Android acceptance into delivery proof.
 
-Android bugreports and general-purpose logcat capture are outside VEIL's sanitized export and can include unrelated sensitive data. Inspect them before sharing. Never upload private conversations to a code repository or issue tracker to reproduce a notification parsing problem; reproduce it with a consenting test message instead.
+## Restricted automation
 
-## Remaining work before later phases
+Both global automation and each contact's automation are off by default. An explicitly configured contact must be bound to opaque stable identity metadata actually supplied by the notification platform; a displayed sender name alone is insufficient. A successful fixed **TEST** dispatch and separately reported recipient receipt are required before the bound contact can be enabled. A normal manual reply receipt is not a compatibility credential, and binding itself keeps automation disabled.
 
-Priority labels do not enable automation in this build. Future automatic replies require stable identity handling, ambiguity rejection, persistent limits/cooldowns, quiet hours, sensitive-message and uncertainty escalation, conservative context handling, and explicit per-contact enablement. Notification metadata cannot guarantee that the owner has not replied through another device.
+Automatic sends additionally require a fresh live non-group message, usable preview, matching unambiguous identity, supported current action, complete local reply-limit history, safe generator result, and successful conservative policy checks. Reconnected/historical notification replays do not authorize unattended sends. Only recognized self-contained greetings and narrow greeting drafts may pass. Sensitive subjects, factual uncertainty, promises, commitments, unknown instructions, missing context, and unsupported content remain for review.
 
-Future cloud engines need a separate content-sharing consent, secure credential lifecycle, provider-specific retention disclosure, network timeouts/cancellation, rate and spending controls, and supported API/OAuth authorization. A ChatGPT subscription is not an implicit credential. Future local models need license, memory, inference-quality, thermal, and battery validation on the actual tablet. Neither engine is simulated in Phase 1.
+Cooldowns, configured quiet hours, conversation/day caps, contact/global limits, and suspension after repeated failures bound unattended interaction. Limits count attempts conservatively, including uncertain outcomes. Identity-based history protects against resetting limits by deleting and recreating a local contact. Global pause and contact stop latches are checked again at the platform boundary to cover asynchronous settings updates.
 
-Before a production private release: complete device compatibility tests, verify backup exclusion on the target One UI version, audit the merged manifest and dependencies, test screen/clipboard exposure, confirm crypto behavior with instrumented tests, and create a dedicated release signing key outside source control. Keep that key for future updates; replacing it can require uninstalling the app and losing local data.
+These are conservative deterministic checks, not comprehensive semantic safety or proof of factual correctness. Unknown content is not granted automatic sending just because a model returned text.
 
-## Security-reporting checklist
+## Optional cloud generation
 
-When reporting an issue privately to the developer, include VEIL version, Android/One UI version, platform version, reproducible harmless steps, expected behavior, actual behavior, and a reviewed sanitized diagnostic file. Do not include real message text, contact names, account tokens, OTPs, private keys, or an unrestricted device bugreport.
+The owner must select OpenAI, provide their own key, and explicitly enable cloud-sharing consent. Selecting the provider alone does not authorize a request. Optional limited context is a separate choice. The integration transmits the selected incoming notification, configured writing preferences and selected approved examples/contact instruction, plus at most six partial context turns if enabled. It does not transmit an entire inbox or secretly import conversations.
+
+The endpoint is fixed HTTPS Responses API. Normal TLS verification remains enabled; the API key is an authorization header rather than prompt content. `store: false` is requested, but this does not promise zero provider retention or remove provider abuse-monitoring policies. Review [AI.md](AI.md) and current OpenAI data controls before consent. A ChatGPT subscription is not an API credential. API billing is the owner's responsibility; no free/cloud/local equivalence is implied.
+
+Credential-like messages and selected request fields are blocked before cloud transport using conservative patterns. Draft validation rejects possible secrets and unsupported content. Provider errors are sanitized; no response bodies, key values, raw exception payloads, or private message text are written into diagnostics. Connection/read/overall timeouts, cancellation, a bounded worker queue, and a session cloud-attempt cap limit activity. No automatic API retry occurs. Failure may produce an explicitly review-only offline template.
+
+Provider-reported input/output token usage may appear in activity. Cost remains unknown unless verified pricing is supplied; the app does not invent a price. Use provider account usage controls as well. Live provider access, account billing, and generation quality are separate from fake-transport tests and require an owner-authorized test.
+
+## Exports
+
+**Sanitized diagnostics** use an explicit allowlist: app/device versions, configuration flags, provider/model/token limits, capability flags, stage counts, and relevant timestamps. They exclude sender/contact labels, message/draft/style/example text, raw keys, identifiers/fingerprints, API keys, intents, private errors, and arbitrary activity details. Configuration flags show eligibility, not proof that a request or send occurred.
+
+**Settings export** includes appearance and writing preferences, including the examples the owner explicitly supplied. It excludes keys, contacts, conversations, dispatch history, cloud-sharing authorization, and automation authorization. The owner chooses the destination through Android's document picker. An exported settings file is not an encrypted backup and may contain personal writing examples; store it accordingly. The exported file contains no authorization that could silently re-enable automation or cloud sharing.
+
+General logcat, Android bugreports, repository issues, and third-party backup tools are outside these sanitized export controls. Reproduce problems with synthetic messages and a consenting test contact instead of uploading real conversations or unrestricted device logs.
+
+## Signing and reporting
+
+Private distribution still requires verification, predictable signing, and device setup. Keep the dedicated release key and its recovery material outside the repository and preserve it for updates. Debug APKs and clean-runner debug signatures are evaluation artifacts, not a stable production signing strategy. Changing keys usually forces uninstall and loses local data.
+
+When reporting an issue, include VEIL version, Android/One UI and source-app versions, harmless reproduction steps, expected/actual stage, and a reviewed diagnostic report. Do not include OTPs, account/API credentials, signing secrets, real conversation text, or unrestricted bugreports.

@@ -18,10 +18,11 @@ import dev.veil.app.domain.*
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab: () -> Unit) {
+internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab: () -> Unit, onAi: () -> Unit, onExportSettings: () -> Unit) {
     val preferences = state.preferences
     val notificationSettings = notificationSettingsAction()
     var deleting by rememberSaveable { mutableStateOf(false) }
+    var enablingAutomation by rememberSaveable { mutableStateOf(false) }
     var glass by remember(preferences.glassIntensity) { mutableFloatStateOf(preferences.glassIntensity) }
     ScreenBody {
         PageHeading("Make room for your preferences.", "Your device. Your data. Your decisions.")
@@ -33,6 +34,8 @@ internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab:
                         modifier = Modifier.heightIn(min = 48.dp))
                 }
             }
+            Text("Accent color", style = MaterialTheme.typography.titleSmall)
+            AccentSelector(preferences.accent, viewModel::setAccent)
             InfoRow(Icons.Outlined.MotionPhotosOff, "Reduce motion", "Quiet transitions and immediate dock selection.",
                 trailing = { Switch(preferences.reduceMotion, viewModel::setReduceMotion,
                     modifier = Modifier.semantics { contentDescription = "Reduce motion" }) })
@@ -40,6 +43,16 @@ internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab:
             Slider(value = glass, onValueChange = { glass = it }, onValueChangeFinished = { viewModel.setGlassIntensity(glass) },
                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Glass intensity" })
             Text("Layered translucency, soft edges, and decorative light. ${if (Build.VERSION.SDK_INT >= 31) "Supported background artwork uses blur." else "This Android version uses a tonal fallback."} This is a glass approximation, not system-level backdrop sampling.",
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        SettingsSection("Your companion") {
+            CompanionSettings(preferences.companionEnabled, viewModel::setCompanionEnabled, preferences.reduceMotion)
+        }
+        SettingsSection("Automation") {
+            InfoRow(Icons.Outlined.AutoAwesome, "Priority automation", "Only explicitly enabled, identity-bound contacts with completed compatibility checks can send automatically.",
+                trailing = { Switch(preferences.automationEnabled, { enabled -> if (enabled) enablingAutomation = true else viewModel.setAutomationEnabled(false) },
+                    modifier = Modifier.semantics { contentDescription = "Enable priority automation" }) })
+            Text("Sensitive, uncertain, group, stale, and rate-limited messages stay for review. Use Pause everything on Home for an immediate stop to observation and dispatch.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         SettingsSection("Notification access") {
@@ -51,33 +64,40 @@ internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab:
             OutlinedButton(onClick = notificationSettings, modifier = Modifier.heightIn(min = 48.dp)) { Text("Manage notification access") }
             TextButton(onClick = onLab, modifier = Modifier.heightIn(min = 48.dp)) { Text("Open Compatibility Lab"); Spacer(Modifier.width(8.dp)); Icon(Icons.Outlined.ArrowForward, null, Modifier.size(17.dp)) }
         }
-        SettingsSection("Reply engine") {
-            InfoRow(Icons.Outlined.PhoneAndroid, "Manual template · on device", "A fixed, recognizable compatibility test. No AI model or cloud provider is connected.")
-            Text(TEST_REPLY, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Personalized generation and automatic replies belong to later milestones. Every send in this build requires your confirmation.",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SettingsSection("Reply engine & writing style") {
+            InfoRow(Icons.Outlined.AutoAwesome, if (preferences.ai.provider == dev.veil.app.ai.AiProvider.OPENAI) "OpenAI · optional cloud" else "Templates · on device",
+                if (preferences.ai.provider == dev.veil.app.ai.AiProvider.OPENAI) "${preferences.ai.model} · ${if (preferences.ai.cloudConsent) "cloud content sharing enabled" else "cloud content sharing disabled"}"
+                else "Conservative deterministic drafts without a downloaded language model.")
+            OutlinedButton(onClick = onAi, modifier = Modifier.heightIn(min = 48.dp)) { Text("Open reply studio") }
         }
         SettingsSection("Privacy & storage") {
-            InfoRow(Icons.Outlined.Lock, "Local and encrypted", "Stored names and message previews use a Keystore-backed key. The app has no network permission, analytics, or advertising.")
+            InfoRow(Icons.Outlined.Lock, "Local and encrypted", "Stored names, previews, and credentials use a Keystore-backed key. Templates stay on device; optional OpenAI uses selected content only with consent. No analytics or advertising.")
             Text("History retention", style = MaterialTheme.typography.titleSmall)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 listOf(1, 3, 7).forEach { days -> FilterChip(selected = preferences.retentionDays == days,
                     onClick = { viewModel.setRetentionDays(days) }, label = { Text("$days ${if (days == 1) "day" else "days"}") },
                     modifier = Modifier.heightIn(min = 48.dp)) }
             }
-            Text("Expired data is removed when VEIL runs or processes notifications. Up to 500 observations and 1,000 activity events are retained. Saved contact labels remain until you remove them.",
+            Text("Expired data is removed when VEIL runs or processes notifications. Up to 500 observations and 1,000 activity events are retained. Saved contact labels remain until you remove them. Minimal dispatch metadata is retained separately for duplicate prevention and limits; deleting visible history does not permit a second send.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            OutlinedButton(onClick = onExportSettings, modifier = Modifier.heightIn(min = 48.dp)) { Text("Export settings and style") }
+            Text("An export may contain your explicitly supplied writing examples. Message history and API keys are excluded.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             OutlinedButton(onClick = { deleting = true }, modifier = Modifier.heightIn(min = 48.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Delete notification history") }
         }
         SettingsSection("About VEIL") {
-            Text("Version ${BuildConfig.VERSION_NAME} · Compatibility build", style = MaterialTheme.typography.titleSmall)
+            Text("Version ${BuildConfig.VERSION_NAME} · Personal companion", style = MaterialTheme.typography.titleSmall)
             Text("A standalone private Android application. No WhatsApp, Instagram, or ChatGPT account credentials are requested. Notification access cannot reveal your complete conversation history.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("Compatibility with your installed messaging apps must be tested on this device. Android dispatch acceptance never proves that the recipient received a message.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+    if (enablingAutomation) AlertDialog(onDismissRequest = { enablingAutomation = false },
+        title = { Text("Enable priority automation?") },
+        text = { Text("VEIL may send real replies only to contacts you explicitly enable after identity binding and compatibility checks. Sensitive or uncertain messages require review. You can stop everything from Home.") },
+        confirmButton = { TextButton(onClick = { enablingAutomation = false; viewModel.setAutomationEnabled(true) }) { Text("Enable automation") } },
+        dismissButton = { TextButton(onClick = { enablingAutomation = false }) { Text("Keep off") } })
     if (deleting) AlertDialog(onDismissRequest = { deleting = false }, title = { Text("Delete notification history?") },
         text = { Text("This removes retained messages and activity and clears live reply handles. Saved contact labels stay. New notifications can appear while observation is enabled; pause first if you want observation to stop.") },
         confirmButton = { TextButton(onClick = { deleting = false; viewModel.deleteHistory() }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Delete history") } },

@@ -1,5 +1,7 @@
 # Phase 1 build verification — 2026-10-30 UTC
 
+This is the historical 0.1.0 prototype report. Version 1 results are recorded in [V1_RELEASE_RESULTS.md](V1_RELEASE_RESULTS.md).
+
 Executed from the standalone VEIL project:
 
 ```sh

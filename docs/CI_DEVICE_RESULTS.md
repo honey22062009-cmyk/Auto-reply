@@ -1,5 +1,7 @@
 # Android instrumentation on GitHub Actions
 
+This records the historical 0.1.0 prototype. See [V1_RELEASE_RESULTS.md](V1_RELEASE_RESULTS.md) for Version 1 verification.
+
 Executed 2026-10-30 UTC on commit `24df4a6379f25efa003848b1c825163d020fb3c7`.
 
 - Workflow: [Android device tests](https://github.com/honey22062009-cmyk/Auto-reply/actions/runs/40994283517).

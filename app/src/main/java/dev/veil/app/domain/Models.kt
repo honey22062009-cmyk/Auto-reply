@@ -1,5 +1,8 @@
 package dev.veil.app.domain
 
+import dev.veil.app.ai.AiConfiguration
+import dev.veil.app.ai.WritingStyle
+
 enum class MessagingApp(val packageName: String, val label: String) {
     WHATSAPP("com.whatsapp", "WhatsApp"), INSTAGRAM("com.instagram.android", "Instagram");
     companion object { fun fromPackage(value: String) = entries.firstOrNull { it.packageName == value } }
@@ -20,6 +23,8 @@ data class ObservedNotification(
     val actionCount: Int,
     val hasReplyAction: Boolean,
     val conversationHint: String? = null,
+    val identityKey: String? = null,
+    val fromActiveReplay: Boolean = false,
 )
 
 enum class ReplyStatus(val label: String) {
@@ -35,11 +40,21 @@ data class MessageRecord(
     val dispatchAcceptedAt: Long? = null,
     val receiptReportedAt: Long? = null,
     val failureReason: String? = null,
+    val suggestion: String? = null,
+    val generationState: String = "NONE",
+    val generationReason: String? = null,
+    val engine: String? = null,
+    val dispatchKind: String? = null,
 )
 
 data class ActivityEvent(val id: Long, val at: Long, val app: MessagingApp?, val title: String, val detail: String)
-data class PriorityContact(val id: String, val label: String, val app: MessagingApp, val sender: String)
+data class PriorityContact(val id: String, val label: String, val app: MessagingApp, val sender: String,
+    val identityKey: String? = null, val autoEnabled: Boolean = false, val paused: Boolean = false,
+    val cooldownSeconds: Int = 120, val maxPerHour: Int = 5, val maxPerDay: Int = 20,
+    val maxPerConversation: Int = 3, val quietStartHour: Int = 22, val quietEndHour: Int = 8,
+    val quietEnabled: Boolean = true, val instruction: String = "", val compatibilityVerified: Boolean = false)
 enum class Appearance { SYSTEM, LIGHT, DARK }
+enum class AccentPalette { ROSE, CORAL, PLUM, AMBER, SILVER }
 data class VeilPreferences(
     val onboarded: Boolean = false,
     val enabledApps: Set<MessagingApp> = emptySet(),
@@ -48,6 +63,11 @@ data class VeilPreferences(
     val reduceMotion: Boolean = false,
     val glassIntensity: Float = 0.65f,
     val retentionDays: Int = 1,
+    val accent: AccentPalette = AccentPalette.ROSE,
+    val companionEnabled: Boolean = true,
+    val ai: AiConfiguration = AiConfiguration(),
+    val style: WritingStyle = WritingStyle(),
+    val automationEnabled: Boolean = false,
 )
 
 data class AppCapability(val app: MessagingApp, val installed: Boolean, val version: String?)
@@ -80,4 +100,7 @@ data class VeilUiState(
     val contacts: List<PriorityContact> = emptyList(),
     val system: SystemSnapshot = SystemSnapshot(),
     val notice: String? = null,
+    val hasApiKey: Boolean = false,
+    val previewDraft: String? = null,
+    val previewBusy: Boolean = false,
 )

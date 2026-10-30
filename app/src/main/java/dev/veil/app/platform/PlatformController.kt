@@ -37,6 +37,9 @@ class PlatformController(context: Context) {
     private var listener: VeilNotificationListener? = null
     private val handles = LinkedHashMap<String, InspectedNotification>()
     private val attempted = LinkedHashSet<String>()
+    private val blockedAutoIdentities = LinkedHashSet<String>()
+    private var captureStop = false
+    private var automaticStop = false
     private val mutableConnected = MutableStateFlow(false)
     val connected: StateFlow<Boolean> = mutableConnected.asStateFlow()
     @Volatile var sink: NotificationSink? = null
@@ -71,12 +74,16 @@ class PlatformController(context: Context) {
         }
     }
 
-    internal fun observed(sbn: StatusBarNotification) {
+    internal fun observed(sbn: StatusBarNotification) = observed(sbn, fromActiveReplay = false)
+
+    private fun observed(sbn: StatusBarNotification, fromActiveReplay: Boolean) {
         val app = MessagingApp.fromPackage(sbn.packageName) ?: return
         // Android grants broad listener access; do not inspect extras until the owner opts this app in.
         if (!synchronized(lock) { enabled(app) }) return
         val keyHash = NotificationInspector.digest(sbn.key)
-        val inspected = runCatching { NotificationInspector.inspect(sbn) }.getOrNull()
+        val inspected = runCatching { NotificationInspector.inspect(sbn) }.getOrNull()?.let {
+            if (fromActiveReplay) it.copy(observation = it.observation.copy(fromActiveReplay = true)) else it
+        }
         val notify = synchronized(lock) {
             handles.entries.removeAll { it.value.rawKey == sbn.key }
             if (!enabled(app)) return@synchronized false
@@ -98,15 +105,26 @@ class PlatformController(context: Context) {
 
     private fun refreshActive() {
         val service = synchronized(lock) { listener } ?: return
-        try { service.activeNotifications.orEmpty().forEach(::observed) }
+        try { service.activeNotifications.orEmpty().forEach { observed(it, fromActiveReplay = true) } }
         catch (_: SecurityException) { disconnected(service) }
         catch (_: IllegalStateException) { disconnected(service) }
     }
 
-    /** Only called after an explicit, foreground confirmation for a consenting test contact. */
-    suspend fun dispatchTest(id: String): DispatchResult = withContext(Dispatchers.Main.immediate) {
+    /** Compatibility tests always retain the recognizable, fixed text. */
+    suspend fun dispatchTest(id: String): DispatchResult = dispatchReply(id, TEST_REPLY)
+
+    /**
+     * IPC adapter only. The repository must commit its one-shot ledger and check manual approval
+     * or explicitly enabled contact rules before calling this method. No detection callback sends.
+     */
+    suspend fun dispatchReply(id: String, text: String, automatic: Boolean = false): DispatchResult = withContext(Dispatchers.Main.immediate) {
+        if (text.isBlank() || text.length > 1000 || text.any {
+                (it.isISOControl() && it != '\n') || it in '\u202A'..'\u202E' || it in '\u2066'..'\u2069'
+            }) {
+            return@withContext DispatchResult.Rejected("Use a reply of 1–1,000 characters without unsafe control characters.")
+        }
         val initial = synchronized(lock) {
-            if (id in attempted) return@withContext DispatchResult.Rejected("A test was already attempted for this message. Ask for a fresh message.")
+            if (id in attempted) return@withContext DispatchResult.Rejected("A reply was already attempted for this message. Ask for a fresh message.")
             handles[id]
         } ?: return@withContext DispatchResult.Rejected("The live notification is no longer available. Ask for a fresh message.")
         if (!synchronized(lock) { enabled(initial.observation.app) }) {
@@ -117,7 +135,7 @@ class PlatformController(context: Context) {
             return@withContext DispatchResult.Rejected("Notification access was removed. Review access in Android settings.")
         }
         if (context.getSystemService(KeyguardManager::class.java).isDeviceLocked) {
-            return@withContext DispatchResult.Rejected("Unlock the tablet before sending a test reply.")
+            return@withContext DispatchResult.Rejected("Unlock the tablet before sending a reply.")
         }
         val service = synchronized(lock) { listener }
             ?: return@withContext DispatchResult.Rejected("Notification listener is disconnected.")
@@ -129,19 +147,24 @@ class PlatformController(context: Context) {
             forget(id)
             return@withContext DispatchResult.Rejected("This notification changed or was removed. Review the newest notification first.")
         }
-        if (current.observation.isGroup) return@withContext DispatchResult.Rejected("Group reply tests are disabled in Phase 1. Use a one-to-one consenting test contact.")
+        if (current.observation.isGroup) return@withContext DispatchResult.Rejected("Group replies are disabled. Review the conversation in the messaging app.")
         if (current.observation.sender.isNullOrBlank() || current.observation.preview.isNullOrBlank()) {
             return@withContext DispatchResult.Rejected("Sender or message preview is unavailable. Open the messaging app to verify the conversation.")
         }
         val reply = current.reply ?: return@withContext DispatchResult.Rejected("No supported, unambiguous free-form reply action is available.")
         synchronized(lock) {
-            if (!enabled(current.observation.app) || id in attempted || listener !== service) {
+            if (!enabled(current.observation.app) || id in attempted || listener !== service ||
+                handles[id]?.rawKey != current.rawKey) {
                 return@synchronized DispatchResult.Rejected("Sending was paused, disconnected, or this message was already attempted.")
+            }
+            if (automatic && (automaticStop || !preferences.automationEnabled || current.observation.identityKey == null ||
+                    current.observation.identityKey in blockedAutoIdentities)) {
+                return@synchronized DispatchResult.Rejected("Automatic replies were stopped for this contact or globally.")
             }
             attempted.add(id)
             while (attempted.size > 1000) attempted.remove(attempted.first())
             try {
-                val results = Bundle().apply { putCharSequence(reply.input.resultKey, TEST_REPLY) }
+                val results = Bundle().apply { putCharSequence(reply.input.resultKey, text) }
                 val intent = Intent().addFlags(Intent.FLAG_RECEIVER_FOREGROUND)
                 RemoteInput.addResultsToIntent(arrayOf(reply.input), intent, results)
                 RemoteInput.setResultsSource(intent, RemoteInput.SOURCE_FREE_FORM_INPUT)
@@ -176,6 +199,28 @@ class PlatformController(context: Context) {
     fun forget(id: String) { synchronized(lock) { handles.remove(id) } }
     fun clear() { synchronized(lock) { handles.clear() } }
 
+    /** User stop latches survive older asynchronous preference emissions. */
+    fun setCaptureStop(stopped: Boolean) {
+        synchronized(lock) {
+            captureStop = stopped
+            if (stopped) handles.clear()
+        }
+    }
+
+    fun setAutomaticStop(stopped: Boolean) {
+        synchronized(lock) { automaticStop = stopped }
+    }
+
+    /** Immediate stop takes effect before any asynchronous contact-preference/database update. */
+    fun suspendAutomaticIdentity(identityKey: String?) {
+        if (identityKey != null) synchronized(lock) { blockedAutoIdentities.add(identityKey) }
+    }
+
+    /** Call only after the matching explicit enable operation was durably saved. */
+    fun resumeAutomaticIdentity(identityKey: String?) {
+        if (identityKey != null) synchronized(lock) { blockedAutoIdentities.remove(identityKey) }
+    }
+
     fun requestReconnect() {
         runCatching { NotificationListenerService.requestRebind(ComponentName(context, VeilNotificationListener::class.java)) }
     }
@@ -198,5 +243,5 @@ class PlatformController(context: Context) {
         ))
     }
 
-    private fun enabled(app: MessagingApp) = preferences.onboarded && !preferences.capturePaused && app in preferences.enabledApps
+    private fun enabled(app: MessagingApp) = !captureStop && preferences.onboarded && !preferences.capturePaused && app in preferences.enabledApps
 }

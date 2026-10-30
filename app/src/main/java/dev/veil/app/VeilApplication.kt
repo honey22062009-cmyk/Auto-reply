@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.room.Room
 import dev.veil.app.data.*
 import dev.veil.app.domain.*
+import dev.veil.app.ai.AiConfiguration
+import dev.veil.app.ai.WritingStyle
 import dev.veil.app.platform.PlatformController
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -18,9 +20,16 @@ class AppGraph(application: Application) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     val platform = PlatformController(application)
     val preferences = PreferencesRepository(application)
-    val database = Room.databaseBuilder(application, VeilDatabase::class.java, "veil.db").build()
-    val repository = VeilRepository(database, SecretBox(), platform::dispatchTest, platform::forget, platform::clear)
+    val secrets = ApiKeyStore(application)
+    val database = Room.databaseBuilder(application, VeilDatabase::class.java, "veil.db")
+        .addMigrations(VeilDatabase.MIGRATION_1_2).build()
+    val repository = VeilRepository(database, SecretBox(), platform::dispatchTest, platform::forget, platform::clear,
+        replyDispatch = { id,text,automatic -> platform.dispatchReply(id,text,automatic) })
     val readyPreferences = MutableStateFlow<VeilPreferences?>(null)
+    val hasApiKey = MutableStateFlow(false)
+    val previewDraft = MutableStateFlow<String?>(null)
+    val previewBusy = MutableStateFlow(false)
+    val assistant = AssistantCoordinator(repository,{ readyPreferences.value ?: VeilPreferences() },secrets::read)
     val system = MutableStateFlow(SystemSnapshot())
     val notice = MutableStateFlow<String?>(null)
     private sealed interface PlatformEvent {
@@ -29,6 +38,21 @@ class AppGraph(application: Application) {
         data class Connected(val value: Boolean) : PlatformEvent
     }
     private val events = Channel<PlatformEvent>(128)
+    @Volatile private var pendingAi: AiConfiguration? = null
+    @Volatile private var pendingStyle: WritingStyle? = null
+
+    fun applyAiImmediately(value: AiConfiguration) {
+        assistant.cancelPending()
+        previewDraft.value=null
+        pendingAi=value
+        readyPreferences.value=readyPreferences.value?.copy(ai=value)
+    }
+    fun applyStyleImmediately(value: WritingStyle) {
+        assistant.cancelPending()
+        previewDraft.value=null
+        pendingStyle=value
+        readyPreferences.value=readyPreferences.value?.copy(style=value)
+    }
 
     fun start() {
         platform.sink = object : NotificationSink {
@@ -39,18 +63,27 @@ class AppGraph(application: Application) {
         scope.launch {
             try {
                 repository.initialize()
+                hasApiKey.value = secrets.hasKey()
+                assistant.start(scope)
                 launch {
                     preferences.preferences.collect { value ->
-                        repository.configure(value)
-                        readyPreferences.value = value
-                        platform.configure(value)
+                        val withAi=pendingAi?.let { override ->
+                            if (override==value.ai) { pendingAi=null; value } else value.copy(ai=override)
+                        } ?: value
+                        val effective=pendingStyle?.let { override ->
+                            if (override==value.style) { pendingStyle=null; withAi } else withAi.copy(style=override)
+                        } ?: withAi
+                        if (readyPreferences.value?.ai != effective.ai) assistant.cancelPending()
+                        repository.configure(effective)
+                        readyPreferences.value = effective
+                        platform.configure(effective)
                         refreshSystem()
                     }
                 }
                 for (event in events) {
                     try {
                         when (event) {
-                            is PlatformEvent.Observed -> repository.record(event.value)
+                            is PlatformEvent.Observed -> { repository.record(event.value); assistant.enqueue(event.value) }
                             is PlatformEvent.Removed -> repository.removed(event.hash)
                             is PlatformEvent.Connected -> { repository.connectionChanged(event.value); refreshSystem() }
                         }

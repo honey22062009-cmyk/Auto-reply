@@ -40,7 +40,7 @@ jobs:
           script: |
             ./gradlew connectedDebugAndroidTest --stacktrace
             mkdir -p app/build/reports/device-screenshots
-            adb pull /sdcard/Android/data/dev.veil.app/files/validation app/build/reports/device-screenshots || true
+            adb pull /data/local/tmp/veil-home-dark.png app/build/reports/device-screenshots/veil-home-dark.png
       - name: Upload executed device-test evidence
         if: always()
         uses: actions/upload-artifact@v4

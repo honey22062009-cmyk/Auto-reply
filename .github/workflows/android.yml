@@ -25,7 +25,7 @@ jobs:
       - name: Install SDK
         run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - name: Unit tests, lint, and APK
-        run: ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest --stacktrace
+        run: ./gradlew testDebugUnitTest lintDebug assembleDebug assembleDebugAndroidTest assembleRelease lintRelease --stacktrace
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -35,4 +35,5 @@ jobs:
             app/build/outputs/apk/androidTest/debug/*.apk
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-release.html
           retention-days: 14

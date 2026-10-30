@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.MotionDurationScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
@@ -35,8 +36,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntOffset
 import androidx.core.view.WindowCompat
 import dev.veil.app.domain.Appearance
+import dev.veil.app.domain.AccentPalette
 
 private val LightColors = lightColorScheme(
     primary = Color(0xFF885563), onPrimary = Color.White,
@@ -60,8 +63,31 @@ private val DarkColors = darkColorScheme(
     error = Color(0xFFFFB2BC), errorContainer = Color(0xFF5D2933),
 )
 
+/** Palette text pairs are checked against WCAG AA; surfaces stay neutral for readability. */
+internal fun veilColorScheme(dark: Boolean, palette: AccentPalette): ColorScheme {
+    val tones = when (palette) {
+        AccentPalette.ROSE -> if (dark) listOf(0xFFDFB0BE, 0xFF452D36, 0xFF533843, 0xFFF7DCE6) else listOf(0xFF885563, 0xFFFFFFFF, 0xFFF2DDE3, 0xFF4C3039)
+        AccentPalette.CORAL -> if (dark) listOf(0xFFE9B49F, 0xFF4B2D24, 0xFF623F33, 0xFFFFE1D5) else listOf(0xFF98523F, 0xFFFFFFFF, 0xFFF9E0D6, 0xFF603527)
+        AccentPalette.PLUM -> if (dark) listOf(0xFFD1B6CC, 0xFF412E3E, 0xFF513D4F, 0xFFEFDDEB) else listOf(0xFF73566F, 0xFFFFFFFF, 0xFFECDDEB, 0xFF493246)
+        AccentPalette.AMBER -> if (dark) listOf(0xFFDBC39C, 0xFF3E301C, 0xFF55452E, 0xFFEFE2C8) else listOf(0xFF785C32, 0xFFFFFFFF, 0xFFF1E3C9, 0xFF4F3B20)
+        AccentPalette.SILVER -> if (dark) listOf(0xFFCBC5D2, 0xFF333039, 0xFF49454F, 0xFFE8E1EC) else listOf(0xFF62616A, 0xFFFFFFFF, 0xFFE5E2EB, 0xFF393842)
+    }
+    return (if (dark) DarkColors else LightColors).copy(
+        primary = Color(tones[0]), onPrimary = Color(tones[1]),
+        primaryContainer = Color(tones[2]), onPrimaryContainer = Color(tones[3]),
+    )
+}
+
 @Composable
-fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, content: @Composable () -> Unit) {
+internal fun effectiveReducedMotion(preference: Boolean): Boolean {
+    val context = rememberCoroutineScope().coroutineContext
+    return preference || (context[MotionDurationScale]?.scaleFactor == 0f)
+}
+
+internal val LocalGlassIntensity = staticCompositionLocalOf { .65f }
+
+@Composable
+fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.ROSE, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
     val dark = when (appearance) {
         Appearance.DARK -> true
         Appearance.LIGHT -> false
@@ -76,8 +102,9 @@ fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, content: @Composable (
             }
         }
     }
+    CompositionLocalProvider(LocalGlassIntensity provides glassIntensity.coerceIn(0f, 1f)) {
     MaterialTheme(
-        colorScheme = if (dark) DarkColors else LightColors,
+        colorScheme = veilColorScheme(dark, palette),
         typography = Typography(
             displaySmall = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Serif, fontSize = 38.sp, lineHeight = 44.sp),
             headlineLarge = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, lineHeight = 39.sp, fontWeight = FontWeight.Normal, letterSpacing = (-0.8).sp),
@@ -90,6 +117,7 @@ fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, content: @Composable (
         shapes = Shapes(small = RoundedCornerShape(12.dp), medium = RoundedCornerShape(18.dp), large = RoundedCornerShape(24.dp)),
         content = content,
     )
+    }
 }
 
 /** Blurred decorative light, with a gradient fallback; this is not a scene backdrop sampler. */
@@ -109,7 +137,7 @@ internal fun VeilBackdrop(modifier: Modifier = Modifier) {
 }
 
 @Composable
-internal fun GlassPanel(modifier: Modifier = Modifier, intensity: Float = .65f, content: @Composable ColumnScope.() -> Unit) {
+internal fun GlassPanel(modifier: Modifier = Modifier, intensity: Float = LocalGlassIntensity.current, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(24.dp)
     Column(
@@ -135,7 +163,9 @@ internal fun FloatingDock(selectedRoute: String?, reducedMotion: Boolean, intens
     onSelect: (Destination) -> Unit, modifier: Modifier = Modifier, rail: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(36.dp)
-    val dockHeight = 51.dp + (15 * LocalDensity.current.fontScale).dp
+    val fontScale = LocalDensity.current.fontScale
+    val motionReduced = effectiveReducedMotion(reducedMotion)
+    val defaultDockHeight = 51.dp + (15 * fontScale).dp
     val selectedIndex = Destination.entries.indexOfFirst { it.route == selectedRoute }.coerceAtLeast(0)
     val surface = modifier.shadow(18.dp, shape, ambientColor = colors.primary.copy(alpha = .16f), spotColor = colors.primary.copy(alpha = .13f))
         .clip(shape)
@@ -144,33 +174,35 @@ internal fun FloatingDock(selectedRoute: String?, reducedMotion: Boolean, intens
     if (rail) {
         Column(surface.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Destination.entries.forEach { item ->
-                DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.width(78.dp).heightIn(min = dockHeight)
+                DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.width(78.dp).heightIn(min = defaultDockHeight)
                     .background(if (item.route == selectedRoute) colors.primaryContainer.copy(alpha = .75f) else Color.Transparent, RoundedCornerShape(27.dp)))
             }
         }
     } else {
         BoxWithConstraints(surface.padding(7.dp)) {
             val itemWidth = maxWidth / 5
-            val offset by animateDpAsState(itemWidth * selectedIndex, tween(if (reducedMotion) 0 else 250), label = "dock highlight")
+            val showLabels = maxWidth >= 400.dp || fontScale <= 1.3f
+            val dockHeight = if (showLabels) defaultDockHeight else 62.dp
+            val offset = animateDpAsState(itemWidth * selectedIndex, tween(if (motionReduced) 0 else 250), label = "dock highlight")
             if (Destination.entries.any { it.route == selectedRoute }) {
-                Box(Modifier.offset(x = offset).width(itemWidth).height(dockHeight).clip(RoundedCornerShape(29.dp))
+                Box(Modifier.offset { IntOffset(offset.value.roundToPx(), 0) }.width(itemWidth).height(dockHeight).clip(RoundedCornerShape(29.dp))
                     .background(Brush.verticalGradient(listOf(colors.primaryContainer.copy(alpha = .85f), colors.primaryContainer.copy(alpha = .45f))))
                     .border(1.dp, Color.White.copy(alpha = .23f), RoundedCornerShape(29.dp)))
             }
-            Row { Destination.entries.forEach { item -> DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.weight(1f).heightIn(min = dockHeight)) } }
+            Row { Destination.entries.forEach { item -> DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.weight(1f).heightIn(min = dockHeight), showLabel = showLabels) } }
         }
     }
 }
 
 @Composable
-private fun DockItem(item: Destination, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+private fun DockItem(item: Destination, isSelected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, showLabel: Boolean = true) {
     val colors = MaterialTheme.colorScheme
     Column(modifier.heightIn(min = 66.dp).clip(RoundedCornerShape(28.dp))
         .semantics { selected = isSelected; contentDescription = "${item.label} tab" }
         .clickable(role = Role.Tab, onClick = onClick).padding(vertical = 8.dp, horizontal = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp, Alignment.CenterVertically)) {
         Icon(item.icon, contentDescription = null, tint = if (isSelected) colors.primary else colors.onSurfaceVariant, modifier = Modifier.size(23.dp))
-        Text(item.label, fontSize = 11.sp, lineHeight = 15.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+        if (showLabel) Text(item.label, fontSize = 11.sp, lineHeight = 15.sp, fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
             color = if (isSelected) colors.onSurface else colors.onSurfaceVariant)
     }
 }

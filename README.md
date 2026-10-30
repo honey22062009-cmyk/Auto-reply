@@ -1,20 +1,32 @@
 # VEIL
 
-A standalone, private Android messaging companion built with Kotlin and Jetpack Compose. Application ID: `dev.veil.app`. This project is independent of Strict Blocker.
+A standalone Android messaging companion built with Kotlin, Jetpack Compose, Room, and supported Android notification APIs. Application ID: `dev.veil.app`. VEIL is independent of Strict Blocker.
 
-## Current milestone: Phase 1
+## Version 1
 
-This compatibility build inspects explicitly enabled WhatsApp and Instagram notifications using Android's notification listener. It displays available sender/preview information and supported reply actions, retains bounded local history, and offers an explicit, user-confirmed fixed test reply for a consenting one-to-one test contact.
+VEIL reads accessible notifications from the official WhatsApp and Instagram Android apps that you explicitly enable. It offers local reply templates, optional OpenAI drafts, manual review and editing, a compatibility lab, and deliberately restricted contact automation. This is a notification-derived view, not a replacement for either app's complete inbox.
 
-**Automatic replies and AI generation are not enabled in this milestone.** The template engine is deterministic and requires no network. Priority contact labels can be saved locally; saving a label does not authorize automation.
+The interface includes a floating glass-style navigation dock, tablet layouts, light/dark/system appearance, Rose/Coral/Plum/Amber/Silver accents, glass intensity, reduced motion, and **Mote**, an optional interactive companion that guides you to useful app screens. Mote is deterministic guidance, not an AI chatbot. Glass rendering uses supported effects and layered translucency; it does not claim native system-level backdrop sampling.
 
-Features include onboarding, Home, notification-derived Inbox, local priority labels, Activity, Settings, a Compatibility Lab, light/dark themes, a floating translucent navigation dock, tablet layouts, reduced motion, encrypted sensitive text fields, configurable retention, history deletion, and sanitized diagnostic export.
+### Sending stays under your control
 
-Glass rendering is a layered visual approximation with supported decorative blur. It does not claim system-level backdrop sampling.
+Automatic sending is off by default. Enabling it requires both the global switch and explicit contact authorization, a stable recipient identity actually exposed by Android notification metadata, and a successful fixed compatibility-test dispatch whose receipt you separately report. A visible sender name alone cannot authorize automation. Binding a contact does not automatically enable it.
+
+Even after configuration, unattended sending is limited to recognized, self-contained greetings and conservative greeting drafts. Sensitive requests, factual questions, commitments, unknown content, groups, stale messages, missing actions, ambiguous identities, and generator review warnings require personal review or are blocked. Cooldowns, quiet hours, conversation/day limits, global caps, durable deduplication, and repeated-failure suspension remain active. Detection and reply generation never bypass these checks.
+
+Android accepting a reply `PendingIntent` does **not** prove receipt. Actual WhatsApp and Instagram capabilities must be tested separately on the installed app/device versions. If no supported reply action is exposed, edit/copy the draft and open the messaging app to send manually. Instagram direct-reply support is not assumed.
+
+### Reply engines and style
+
+- **Offline templates:** deterministic English, Hindi, and Hinglish suggestions. This is not a downloaded local language model.
+- **Optional OpenAI:** your own encrypted API key, explicit cloud-sharing consent, configurable model/output limit, optional limited context, and reported token usage. Provider billing is separate; no cost estimate is fabricated.
+- **Writing preferences:** language, warmth, humor, emojis, length, preferred/avoided phrases, and examples you explicitly supply. Templates support a limited subset; cloud generation receives selected preferences/examples only after consent. A handful of examples does not establish complete personality learning.
+
+Cloud generation transmits selected message content to OpenAI. It is not completely local or free, and a ChatGPT subscription is not an API credential. VEIL does not extract credentials from or automate the ChatGPT app. See [reply-engine details](docs/AI.md).
 
 ## Build
 
-Use JDK 17 and Android SDK 35 with Build Tools 35.0.0. Open this directory in Android Studio, or configure `ANDROID_HOME` and run:
+Use JDK 17, Android SDK 35, and Build Tools 35.0.0. Open the project in Android Studio or configure `ANDROID_HOME`, then run the checked-in wrapper:
 
 ```sh
 ./gradlew testDebugUnitTest
@@ -22,37 +34,45 @@ Use JDK 17 and Android SDK 35 with Build Tools 35.0.0. Open this directory in An
 ./gradlew lintDebug assembleDebugAndroidTest
 ```
 
-The debug APK is generated at `app/build/outputs/apk/debug/app-debug.apk` only after a successful build. GitHub Actions runs the same verification and uploads the debug APK, instrumentation APK, and reports as workflow artifacts. Build results are documented separately; source presence does not establish a passing build.
+A successful debug build writes `app/build/outputs/apk/debug/app-debug.apk`. GitHub Actions builds source and uploads APKs/reports. Source presence does not establish that a particular revision passed. Consult [build verification](docs/BUILD_VERIFICATION.md) for executed results.
 
-For connected device tests:
+For an attached emulator or dedicated test device:
 
 ```sh
 ./gradlew connectedDebugAndroidTest
 ```
 
-## Install and test
+The manual Android device-tests workflow uses a generic accelerated API 35 emulator. Emulator checks do not establish Samsung, WhatsApp, Instagram, or recipient-delivery compatibility.
 
-1. Download a verified debug APK from a successful GitHub Actions run or your local build.
-2. On the tablet, permit installation from the specific file/browser source you use, then open the APK.
-3. Complete onboarding and explicitly select which messaging apps VEIL may inspect.
-4. Open notification access settings and enable VEIL. Android may require **App info → menu → Allow restricted settings** for a sideloaded app.
-5. Follow the [device test guide](docs/DEVICE_TEST_GUIDE.md) with a consenting test contact.
+## Install and start
 
-Notification detection, reply-action availability, Android dispatch acceptance, and recipient receipt are different outcomes. A successful PendingIntent call is never proof of delivery. Actual WhatsApp/Instagram behavior must be checked on the installed app and Android versions. Instagram direct-reply support is not assumed. Unsupported actions use copy/open-app fallback.
+1. Download an APK from a verified build. Permit installation from the specific source you use, then open it.
+2. Complete onboarding and explicitly select the supported messaging apps VEIL may inspect.
+3. Grant notification access through Android Settings. A sideloaded installation may first require **App info → menu → Allow restricted settings**.
+4. Open the Compatibility Lab and follow the [tablet test guide](docs/DEVICE_TEST_GUIDE.md) with a consenting one-to-one test contact.
+5. Review suggestions in Inbox. Configure AI Studio if you want optional cloud generation. Configure and test each priority contact before deliberately enabling its automation.
 
-## Privacy and signing
+The global pause stops capture and blocks replies. Individual contacts can be paused independently. Android and Samsung background restrictions can disconnect a listener; uninterrupted execution is not guaranteed.
 
-Phase 1 requests no Internet, Accessibility, contacts, SMS, microphone, or camera permission. Sensitive stored text uses Android Keystore-backed AES-GCM field encryption; this is not full database encryption. Backups are excluded, and the activity uses `FLAG_SECURE`. Android notification access itself is broad; read the [security notes](docs/SECURITY.md).
+## Privacy and updates
 
-Debug builds are for evaluation. Keep a dedicated release signing key outside the repository for durable private distribution. Updates must use the same application ID and signing key; changing keys usually requires uninstalling and losing local data. CI debug signing keys may differ across clean runners, so CI artifacts are not a stable release update channel. Never commit keys, real conversation data, API credentials, or device backups.
+Sensitive message fields, drafts, contact instructions, writing examples, and the optional API key use Android Keystore-backed field encryption. Structured metadata is not a fully encrypted database. History defaults to one day and can be set to one, three, or seven days. Deleting visible history retains a content-free dispatch ledger for up to 30 days to protect against duplicate sends and preserve limits. Contact labels remain until removed.
+
+Settings export excludes API keys, contacts, message history, the dispatch ledger, cloud consent, and automation authorization. It includes your supplied writing examples; choose its destination accordingly. Sanitized diagnostics exclude private message/style content and credentials. Backups are excluded, and the activity uses `FLAG_SECURE`. Read the [security notes](docs/SECURITY.md) for exact boundaries.
+
+VEIL requests Internet permission for the optional HTTPS AI integration. It requests no Accessibility Service, contacts, SMS, microphone, camera, or all-files permission. There is no central message server, advertising SDK, or analytics service.
+
+Use the same application ID and signing key for future updates. Changing signing keys usually requires uninstalling and losing local data. Clean CI debug builds may use different keys, so debug artifacts are not a durable release-update channel. Keep a dedicated private signing key outside source control. Never commit API keys, signing secrets, real conversations, or device backups.
 
 ## Documentation
 
-- [Platform research and supported API boundaries](docs/PLATFORM_RESEARCH.md)
-- [Samsung tablet compatibility test guide](docs/DEVICE_TEST_GUIDE.md)
+- [Version 1 features and limits](docs/V1_FEATURES.md)
+- [AI engines and provider data](docs/AI.md)
+- [Platform research](docs/PLATFORM_RESEARCH.md)
+- [Tablet compatibility test guide](docs/DEVICE_TEST_GUIDE.md)
 - [Security and privacy](docs/SECURITY.md)
 - [Build toolchain](docs/TOOLCHAIN.md)
 - [Build verification](docs/BUILD_VERIFICATION.md)
-- [Accelerated emulator test results](docs/CI_DEVICE_RESULTS.md)
+- [Recorded emulator results](docs/CI_DEVICE_RESULTS.md)
 
-The remaining milestones cover explicit per-contact automation, safety/rate rules, modular AI engines, writing style, and measured device reliability. These capabilities are not simulated in Phase 1.
+Live OpenAI account access, paid generation quality, actual tablet performance, Samsung background behavior, and messaging-app compatibility require their own verification. No live provider request or spending is implied by the implemented integration or synthetic tests.
