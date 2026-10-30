@@ -95,8 +95,11 @@ class MainActivitySmokeTest {
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Draft preview").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Draft preview").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Hey!").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithContentDescription("Home tab").performClick()
-        compose.waitUntil(30_000) {
+        // Verify that returning from a detail route really selects Home (not a restored AI Studio).
+        compose.onNodeWithContentDescription("Home tab").performClick().assertIsSelected()
+        assertTrue("Paused preference must survive detail-screen navigation",
+            graph.readyPreferences.value?.capturePaused == true)
+        compose.waitUntil(15_000) {
             compose.onAllNodesWithText("Observation paused").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Observation paused").performScrollTo().assertIsDisplayed()
