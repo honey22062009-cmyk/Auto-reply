@@ -11,7 +11,8 @@ to be the newest versions available.
 
 ## This build workspace
 
-- OpenJDK 21.0.12.1, supported by Gradle 8.11.1; Java 17 is used in CI.
+- Temurin JDK 17.0.21+9 for compilation and tests; Java 17 is also used in CI.
+- The preinstalled OpenJDK 21 was runtime-only and could not compile this project.
 - Android SDK: `/workspace/android-sdk`
 - Android command-line tools: revision 12.0 (archive 11076708).
 - Android platform: API 35; build tools: 35.0.0.
@@ -55,8 +56,8 @@ Robolectric tests are host-side checks and do not establish WhatsApp/Instagram
 or Samsung device compatibility. Instrumented tests require an attached device
 or a functioning emulator via `./gradlew connectedDebugAndroidTest`.
 The installed `adb` also cannot initialize in this restricted workspace because
-its default `/home/agent/.android` directory is read-only. No device installation
-or connected instrumentation result is claimed.
+its default `/home/agent/.android` directory is read-only. The software emulator attempt and exact runtime results are recorded in
+[EMULATOR_RESULTS.md](EMULATOR_RESULTS.md). No Samsung compatibility is claimed.
 
 The CI workflow builds and uploads debug artifacts and test reports. It is
 included in the source; no GitHub repository has been created or published.

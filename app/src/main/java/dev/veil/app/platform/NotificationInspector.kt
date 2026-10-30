@@ -7,6 +7,7 @@ import android.os.Build
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import androidx.core.os.BundleCompat
 import dev.veil.app.domain.MessagingApp
 import dev.veil.app.domain.ObservedNotification
 import java.security.MessageDigest
@@ -39,7 +40,13 @@ internal object NotificationInspector {
         val latest = style?.messages?.lastOrNull()
         // The framework represents an outgoing/local-user message with a null sender.
         if (latest != null && latest.person == null) return null
-        if (latest != null && samePerson(latest.person, style?.user)) return null
+        // Framework notifications can retain the complete local-user Person separately from
+        // the compat style bundle. Preserve its key/URI instead of comparing display names.
+        val frameworkUser = BundleCompat.getParcelable(notification.extras,
+            Notification.EXTRA_MESSAGING_PERSON, android.app.Person::class.java)?.let {
+                Person.Builder().setName(it.name).setKey(it.key).setUri(it.uri).build()
+            }
+        if (latest != null && (samePerson(latest.person, frameworkUser) || samePerson(latest.person, style?.user))) return null
 
         val extras = notification.extras
         val rawText = clean(latest?.text ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)

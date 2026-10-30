@@ -126,8 +126,12 @@ class NotificationInspectorTest {
     }
 
     @Test fun `message text retained is bounded even for oversized previews`() {
-        val result = inspect(styleMessage("a".repeat(8000), 1200))!!
-        assertEquals(4096, result.observation.preview!!.length)
+        val notification = builder().setContentTitle("Aditi").setContentText("short").build()
+        // Builder truncation varies by Android version. Inject oversized source extras to
+        // validate VEIL's own boundary rather than expecting the framework to retain 8K.
+        notification.extras.putCharSequence(Notification.EXTRA_TEXT, "a".repeat(8000))
+        assertEquals(4096, inspect(notification)!!.observation.preview!!.length)
+        assertTrue(inspect(styleMessage("a".repeat(8000), 1200))!!.observation.preview!!.length <= 4096)
     }
 
     @Test fun `foreign content intent cannot become conversation open handle`() {

@@ -1,6 +1,7 @@
 package dev.veil.app.ui
 
 import android.graphics.Bitmap
+import android.os.Build
 import android.view.WindowManager
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.*
@@ -10,6 +11,7 @@ import dev.veil.app.VeilApplication
 import dev.veil.app.domain.Appearance
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,6 +24,8 @@ class MainActivitySmokeTest {
     @get:Rule val compose = createAndroidComposeRule<MainActivity>()
 
     @Test fun navigationPauseContactAndThemePersistThroughRealApplication() {
+        assumeTrue("Run this data-reset smoke test only on the disposable Google emulator.",
+            Build.MODEL.startsWith("sdk_gphone"))
         val graph = (compose.activity.application as VeilApplication).graph
         runBlocking {
             graph.preferences.finishOnboarding(emptySet())

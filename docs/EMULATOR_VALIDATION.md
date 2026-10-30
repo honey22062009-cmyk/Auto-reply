@@ -41,3 +41,7 @@ Android 15 and model `sdk_gphone64_x86_64`. Zygote, SurfaceFlinger, and
 system_server were observed running. Boot is slow under CPU emulation.
 Application installation, launch, and instrumentation results are recorded
 below only after execution.
+
+The resumed local attempt and its framework boot failure are recorded in
+[EMULATOR_RESULTS.md](EMULATOR_RESULTS.md). It did not verify installation,
+launch, screenshots, or instrumented tests.
