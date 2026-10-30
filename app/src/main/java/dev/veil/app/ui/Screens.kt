@@ -328,7 +328,7 @@ private fun PriorityPlatformSection(
                 Text("${contacts.size} saved · ${if (app == MessagingApp.WHATSAPP) "Saved names and phone numbers" else "Usernames and account IDs"}",
                     style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
             }
-            OutlinedButton(onClick = onAdd, modifier = Modifier.heightIn(min = 48.dp)) {
+            OutlinedButton(onClick = onAdd, modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Add ${app.label} person" }) {
                 Icon(Icons.Outlined.Add, null, Modifier.size(18.dp))
                 Spacer(Modifier.width(5.dp))
                 Text("Add")
