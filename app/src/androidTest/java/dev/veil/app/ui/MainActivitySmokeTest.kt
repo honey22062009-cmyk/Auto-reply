@@ -94,7 +94,7 @@ class MainActivitySmokeTest {
         compose.onNodeWithText("Preview reply").performScrollTo().assertIsEnabled().performClick()
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Draft preview").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Draft preview").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Hey!").assertIsDisplayed()
+        compose.onNodeWithText("Hey!").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Home tab").performClick()
         compose.onNodeWithText("Your conversations.\nA little more breathing room.").performScrollTo()
         compose.onNodeWithText("Observation paused").assertIsDisplayed()
