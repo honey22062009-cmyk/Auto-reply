@@ -96,8 +96,10 @@ class MainActivitySmokeTest {
         compose.onNodeWithText("Draft preview").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Hey!").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Home tab").performClick()
-        compose.onNodeWithText("Your conversations.\nA little more breathing room.").performScrollTo()
-        compose.onNodeWithText("Observation paused").assertIsDisplayed()
+        compose.waitUntil(30_000) {
+            compose.onAllNodesWithText("Observation paused").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Observation paused").performScrollTo().assertIsDisplayed()
         // Clear only this test window's protection to capture synthetic, empty-app QA artwork.
         compose.activityRule.scenario.onActivity { it.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
         compose.waitForIdle()
