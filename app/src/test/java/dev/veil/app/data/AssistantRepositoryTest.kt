@@ -148,6 +148,52 @@ class AssistantRepositoryTest {
         assertFalse(stored.compatibilityVerified)
     }
 
+    @Test fun `account hints are encrypted and changing them revokes verified automatic permissions`() = runBlocking {
+        repository.addContact("Friend", MessagingApp.WHATSAPP, "Aditi",
+            whatsappPhone = "+919876543210")
+        val initial = repository.contactSnapshot().single()
+        assertEquals("+919876543210", initial.whatsappPhone)
+        assertNotEquals("+919876543210", database.dao().findContact(initial.id)!!.whatsappPhone)
+        assertNull(initial.identityKey)
+        assertFalse(initial.autoEnabled)
+        repository.record(incoming("verification-with-phone"))
+        repository.sendTest("verification-with-phone")
+        repository.confirmReceipt("verification-with-phone")
+        repository.bindContact(initial.id, "verification-with-phone")
+        assertTrue(repository.contactSnapshot().single().compatibilityVerified)
+        repository.saveContact(repository.contactSnapshot().single().copy(autoEnabled = true))
+        assertTrue(repository.contactSnapshot().single().autoEnabled)
+        repository.saveContact(repository.contactSnapshot().single().copy(
+            whatsappPhone = "+919876543211", autoEnabled = false))
+        val edited = repository.contactSnapshot().single()
+        assertEquals("+919876543211", edited.whatsappPhone)
+        assertFalse(edited.autoEnabled)
+        assertFalse(edited.compatibilityVerified)
+        assertNull(edited.identityKey)
+    }
+
+    @Test fun `binding a different visible sender is rejected even when a stable key exists`() = runBlocking {
+        repository.addContact("Friend", MessagingApp.WHATSAPP, "Aditi")
+        val id = repository.contactSnapshot().single().id
+        repository.record(incoming("wrong-sender").copy(sender = "Another account"))
+        val result = repository.bindContact(id, "wrong-sender")
+        assertTrue(result.contains("does not match"))
+        assertNull(repository.contactSnapshot().single().identityKey)
+    }
+
+    @Test fun `instagram owner-provided username and id are encrypted but do not grant auto reply`() = runBlocking {
+        repository.addContact("IG friend", MessagingApp.INSTAGRAM, "Priyanshi",
+            instagramUsername = "@official.friend", instagramUserId = "9876543210")
+        val contact = repository.contactSnapshot().single()
+        assertEquals("official.friend", contact.instagramUsername)
+        assertEquals("9876543210", contact.instagramUserId)
+        assertNull(contact.identityKey)
+        assertFalse(contact.autoEnabled)
+        val stored = database.dao().findContact(contact.id)!!
+        assertNotEquals("official.friend", stored.instagramUsername)
+        assertNotEquals("9876543210", stored.instagramUserId)
+    }
+
     @Test fun `binding requires actual test acceptance and separately reported receipt`() = runBlocking {
         repository.addContact("Friend", MessagingApp.WHATSAPP, "Aditi")
         val id = repository.contactSnapshot().single().id
