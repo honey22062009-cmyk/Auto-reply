@@ -88,6 +88,18 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
     val goLab = { nav.navigate("lab") { launchSingleTop = true } }
     val goInbox = { nav.navigate("inbox") { launchSingleTop = true } }
     val goAi = { nav.navigate("ai") { launchSingleTop = true } }
+    // Detail screens such as AI Studio must not restore themselves when a main tab is tapped.
+    // Save/restore tab state only when switching directly between primary destinations.
+    val onDockSelect: (Destination) -> Unit = { destination ->
+        if (selectedRoute != destination.route) {
+            val leavingDetail = Destination.entries.none { it.route == selectedRoute }
+            nav.navigate(destination.route) {
+                popUpTo(nav.graph.findStartDestination().id) { saveState = !leavingDetail }
+                launchSingleTop = true
+                restoreState = !leavingDetail
+            }
+        }
+    }
     val reducedMotion = effectiveReducedMotion(state.preferences.reduceMotion)
     val exportSettings = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> uri?.let(viewModel::exportSettings) }
     BoxWithConstraints(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
@@ -97,10 +109,7 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
             if (rail) {
                 Box(Modifier.width(104.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
                     FloatingDock(selectedRoute, state.preferences.reduceMotion, state.preferences.glassIntensity,
-                        onSelect = { destination -> nav.navigate(destination.route) {
-                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true; restoreState = true
-                        } }, rail = true)
+                        onSelect = onDockSelect, rail = true)
                 }
             }
             Box(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
@@ -119,10 +128,7 @@ private fun MainShell(state: VeilUiState, viewModel: VeilViewModel) {
         }
         if (!rail && !keyboardOpen) {
             FloatingDock(selectedRoute, state.preferences.reduceMotion, state.preferences.glassIntensity,
-                onSelect = { destination -> nav.navigate(destination.route) {
-                    popUpTo(nav.graph.findStartDestination().id) { saveState = true }
-                    launchSingleTop = true; restoreState = true
-                } }, modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp).widthIn(max = 680.dp).fillMaxWidth())
+                onSelect = onDockSelect, modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 10.dp).widthIn(max = 680.dp).fillMaxWidth())
         }
         if (!keyboardOpen && selectedRoute == "home") CompanionDock(state, onNavigate = { route -> nav.navigate(route) { launchSingleTop = true } },
             onHide = { viewModel.setCompanionEnabled(false) },
