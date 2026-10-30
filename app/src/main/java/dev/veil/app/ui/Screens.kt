@@ -44,16 +44,16 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
     }
     val today = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     ScreenBody {
-        PageHeading("Your conversations.\nA little more breathing room.", "Thoughtful replies. A calmer way to keep in touch.")
+        PageHeading("Your conversations.\nA little more breathing room.", "A quieter space for your messages and replies.")
         GlassPanel(intensity = prefs.glassIntensity, modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Eyebrow("Your companion")
                 Icon(Icons.Outlined.BlurOn, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Text(status, style = MaterialTheme.typography.headlineMedium)
-            Text(if (prefs.automationEnabled) "Only explicitly configured priority rules can send automatically. Sensitive or uncertain messages stay for review." else "Suggestions first. Automatic sending stays off until you enable it globally and for an identity-bound, tested priority contact.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (prefs.automationEnabled) "Only approved priority rules may send. Anything sensitive stays for your review." else "Suggestions are ready. Automatic replies remain off until you choose and verify a contact.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
-            InfoRow(Icons.Outlined.PauseCircleOutline, "Pause everything", "Stops observation and blocks all reply dispatch.",
+            InfoRow(Icons.Outlined.PauseCircleOutline, "Pause everything", "Stops observing messages and prevents new replies.",
                 trailing = { Switch(prefs.capturePaused, onPause, modifier = Modifier.semantics { contentDescription = "Pause everything" }) })
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MessagingApp.entries.forEach { app -> StatusPill("${app.label} ${if (app in prefs.enabledApps) "on" else "off"}") }
@@ -72,19 +72,27 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
                 Metric("${state.contacts.size}", "Priority contacts", Modifier.weight(1f))
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Eyebrow("Your voice")
-            Text(if (prefs.ai.provider == dev.veil.app.ai.AiProvider.OPENAI) "OpenAI · cloud replies" else "Templates · on-device replies", style = MaterialTheme.typography.titleLarge)
-            Text("${prefs.style.language.name.lowercase().replaceFirstChar { it.uppercase() }} · ${prefs.style.maxCharacters} character preference", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = onAi, modifier = Modifier.heightIn(min = 48.dp)) { Text("Open reply studio") }
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Eyebrow("The next small step")
-            Text("Know what works on your tablet.", style = MaterialTheme.typography.titleLarge)
-            Text("The Compatibility Lab separates a detected notification, an available reply action, and a successful Android dispatch.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FilledTonalButton(onClick = onLab, modifier = Modifier.heightIn(min = 50.dp)) {
-                Icon(Icons.Outlined.Science, null, Modifier.size(20.dp)); Spacer(Modifier.width(9.dp)); Text("Open Compatibility Lab")
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Eyebrow("Quick actions")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalButton(onClick = onInbox, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Icon(Icons.Outlined.ChatBubbleOutline, null, Modifier.size(19.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Review inbox")
+                }
+                OutlinedButton(onClick = onLab, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Icon(Icons.Outlined.Science, null, Modifier.size(19.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Check compatibility")
+                }
+                TextButton(onClick = onAi, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text("Reply style")
+                    Spacer(Modifier.width(5.dp))
+                    Icon(Icons.Outlined.ArrowForward, null, Modifier.size(17.dp))
+                }
             }
         }
         state.messages.firstOrNull()?.let { latest ->
