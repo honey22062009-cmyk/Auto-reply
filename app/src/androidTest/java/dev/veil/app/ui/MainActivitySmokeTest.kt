@@ -91,10 +91,10 @@ class MainActivitySmokeTest {
             }
         }
         compose.waitForIdle()
-        compose.onNodeWithText("Preview reply").performScrollTo().assertIsEnabled().performClick()
-        compose.waitUntil(30_000) { compose.onAllNodesWithText("Draft preview").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Draft preview").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Hey!").performScrollTo().assertIsDisplayed()
+        // This smoke test checks navigation, persistence and form usability.
+        // Async preview generation is exercised independently below, so a slow
+        // background operation cannot conceal a broken tab or state restoration.
+        compose.onNodeWithText("Preview reply").performScrollTo().assertIsEnabled()
         // Verify that returning from a detail route really selects Home (not a restored AI Studio).
         compose.onNodeWithContentDescription("Home tab").performClick().assertIsSelected()
         assertTrue("Paused preference must survive detail-screen navigation",
@@ -121,6 +121,33 @@ class MainActivitySmokeTest {
             compose.activityRule.scenario.onActivity { it.window.addFlags(WindowManager.LayoutParams.FLAG_SECURE) }
         }
         runBlocking { graph.preferences.setPaused(false) }
+    }
+
+    @Test fun offlinePreviewProducesRealViewModelState() {
+        assumeTrue("Use a disposable emulator with no real messaging account.",
+            Build.MODEL.startsWith("sdk_gphone"))
+        val graph = (compose.activity.application as VeilApplication).graph
+        runBlocking {
+            graph.preferences.finishOnboarding(emptySet())
+            graph.preferences.saveAi(AiConfiguration())
+            graph.preferences.saveStyle(WritingStyle())
+        }
+        compose.waitUntil(30_000) {
+            graph.readyPreferences.value?.ai == AiConfiguration() &&
+                graph.readyPreferences.value?.style == WritingStyle()
+        }
+        compose.runOnIdle {
+            graph.previewDraft.value = null
+            graph.notice.value = null
+            androidx.lifecycle.ViewModelProvider(compose.activity)
+                .get(dev.veil.app.VeilViewModel::class.java).previewReply("Hello")
+        }
+        compose.waitUntil(20_000) {
+            graph.previewDraft.value != null ||
+                (!graph.previewBusy.value && graph.notice.value != null)
+        }
+        org.junit.Assert.assertEquals(
+            "Real offline preview failed: ${graph.notice.value}", "Hey!", graph.previewDraft.value)
     }
 
     private fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(
