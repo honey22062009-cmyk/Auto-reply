@@ -143,10 +143,10 @@ internal fun GlassPanel(modifier: Modifier = Modifier, intensity: Float = LocalG
     Column(
         modifier.shadow(10.dp, shape, ambientColor = colors.primary.copy(alpha = .07f), spotColor = colors.primary.copy(alpha = .08f))
             .clip(shape)
-            .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .95f - intensity * .18f), colors.surface.copy(alpha = .92f))))
+            .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .94f - intensity * .32f), colors.surfaceVariant.copy(alpha = .87f - intensity * .24f), colors.surface.copy(alpha = .90f - intensity * .20f))))
             .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .34f), colors.outlineVariant.copy(alpha = .35f), Color.White.copy(alpha = .1f))), shape)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp), content = content,
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp), content = content,
     )
 }
 
@@ -162,32 +162,32 @@ internal enum class Destination(val route: String, val label: String, val icon: 
 internal fun FloatingDock(selectedRoute: String?, reducedMotion: Boolean, intensity: Float,
     onSelect: (Destination) -> Unit, modifier: Modifier = Modifier, rail: Boolean = false) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(36.dp)
+    val shape = RoundedCornerShape(if (rail) 32.dp else 36.dp)
     val fontScale = LocalDensity.current.fontScale
     val motionReduced = effectiveReducedMotion(reducedMotion)
     val defaultDockHeight = 51.dp + (15 * fontScale).dp
     val selectedIndex = Destination.entries.indexOfFirst { it.route == selectedRoute }.coerceAtLeast(0)
     val surface = modifier.shadow(18.dp, shape, ambientColor = colors.primary.copy(alpha = .16f), spotColor = colors.primary.copy(alpha = .13f))
         .clip(shape)
-        .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .96f - intensity * .21f), colors.surfaceVariant.copy(alpha = .90f))))
-        .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .60f), colors.outlineVariant.copy(alpha = .5f), Color.White.copy(alpha = .15f))), shape)
+        .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .91f - intensity * .31f), colors.surfaceVariant.copy(alpha = .86f - intensity * .31f), colors.surface.copy(alpha = .87f - intensity * .27f))))
+        .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .76f), colors.outlineVariant.copy(alpha = .31f), Color.White.copy(alpha = .32f))), shape)
     if (rail) {
         Column(surface.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Destination.entries.forEach { item ->
                 DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.width(78.dp).heightIn(min = defaultDockHeight)
-                    .background(if (item.route == selectedRoute) colors.primaryContainer.copy(alpha = .75f) else Color.Transparent, RoundedCornerShape(27.dp)))
+                    .background(if (item.route == selectedRoute) colors.primaryContainer.copy(alpha = .56f) else Color.Transparent, RoundedCornerShape(27.dp)))
             }
         }
     } else {
         BoxWithConstraints(surface.padding(7.dp)) {
             val itemWidth = maxWidth / 5
-            val showLabels = maxWidth >= 400.dp || fontScale <= 1.3f
+            val showLabels = fontScale <= 1.4f
             val dockHeight = if (showLabels) defaultDockHeight else 62.dp
             val offset = animateDpAsState(itemWidth * selectedIndex, tween(if (motionReduced) 0 else 250), label = "dock highlight")
             if (Destination.entries.any { it.route == selectedRoute }) {
                 Box(Modifier.offset { IntOffset(offset.value.roundToPx(), 0) }.width(itemWidth).height(dockHeight).clip(RoundedCornerShape(29.dp))
-                    .background(Brush.verticalGradient(listOf(colors.primaryContainer.copy(alpha = .85f), colors.primaryContainer.copy(alpha = .45f))))
-                    .border(1.dp, Color.White.copy(alpha = .23f), RoundedCornerShape(29.dp)))
+                    .background(Brush.verticalGradient(listOf(colors.primaryContainer.copy(alpha = .67f), colors.primaryContainer.copy(alpha = .26f))))
+                    .border(1.dp, Color.White.copy(alpha = .55f), RoundedCornerShape(29.dp)))
             }
             Row { Destination.entries.forEach { item -> DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.weight(1f).heightIn(min = dockHeight), showLabel = showLabels) } }
         }
