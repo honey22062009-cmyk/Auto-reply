@@ -75,7 +75,8 @@ class MainActivitySmokeTest {
         compose.waitUntil(30_000) { graph.readyPreferences.value?.accent == AccentPalette.PLUM }
         compose.onNodeWithContentDescription("Plum accent").assertIsSelected()
 
-        // Mote's route opens the actual studio; the preview uses saved offline templates only.
+        // The optional guide lives on Home rather than covering each workspace screen.
+        compose.onNodeWithContentDescription("Home tab").performClick()
         compose.onNodeWithContentDescription("Mote, your VEIL guide").performClick()
         compose.onNodeWithText("Open reply settings").performScrollTo().performClick()
         compose.waitUntil(10_000) { compose.activity.hasWindowFocus() }
