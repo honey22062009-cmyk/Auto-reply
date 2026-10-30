@@ -1,6 +1,7 @@
 package dev.veil.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -19,6 +20,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.veil.app.VeilViewModel
@@ -442,7 +444,7 @@ internal fun AddContactDialog(
                         singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         modifier = Modifier.fillMaxWidth(), isError = hints == null)
                 } else {
-                    OutlinedTextField(username, { username = it.take(31) },
+                    OutlinedTextField(username, { username = it.removePrefix("@").take(30) },
                         label = { Text("Instagram username") }, prefix = { Text("@") },
                         singleLine = true, modifier = Modifier.fillMaxWidth(), isError = hints == null)
                     OutlinedTextField(userId, { userId = it.take(32) },
