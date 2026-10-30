@@ -69,6 +69,9 @@ class AssistantCoordinator(
             val replay = observed.fromActiveReplay || (observed.messageAt ?: 0L) < sessionStartedAt - 5_000L
             // A manual Generate action is fresh authorization even for retained history. It never auto-sends.
             var result = generate(request, prefs, preferLocal = replay && !force, expectedEpoch = task.epoch)
+            if (result is GenerationResult.Success && observed.notificationContextNeedsReview) {
+                result=result.copy(requiresApproval=true,warnings=result.warnings+"Earlier messages exposed in this notification need your personal review.")
+            }
             ensureCurrent(task.epoch)
             if (result is GenerationResult.Failure && result.code !in setOf(AiFailureCode.SENSITIVE_INPUT, AiFailureCode.EMPTY_INPUT)) {
                 val fallback = ManualTemplateEngine().generate(request)

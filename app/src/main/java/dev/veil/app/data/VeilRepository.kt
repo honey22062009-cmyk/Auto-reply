@@ -169,7 +169,7 @@ class VeilRepository(
     }
     suspend fun context(identity: String?, excluding: String): List<ContextTurn> = mutex.withLock {
         if (identity == null) return@withLock emptyList()
-        dao.messagesForIdentity(identity,6).filter { it.id != excluding }.reversed().flatMap { row ->
+        dao.messagesForIdentity(identity,6).filter { it.id != excluding && it.dispatchKind != "TEST" }.reversed().flatMap { row ->
             buildList {
                 cipher.decrypt(row.preview)?.takeUnless(DraftSafety::containsCredentials)?.let { add(ContextTurn(ContextRole.INCOMING,it)) }
                 // A dispatch is not proof of delivery; use only owner-reported received test/reply context.
@@ -247,6 +247,15 @@ class VeilRepository(
             val zone = ZoneId.systemDefault()
             val dayKey = Instant.ofEpochMilli(now()).atZone(zone).toLocalDate().toString()
             val identity = row.identityKey.orEmpty()
+            val priorNeedsReview=dao.messagesForIdentity(identity,6).any { previous ->
+                previous.id!=id && previous.dispatchKind!="TEST" && previous.postedAt>=now()-6*3_600_000L &&
+                    MessageSafetyClassifier.classify(cipher.decrypt(previous.preview).orEmpty()).safety in setOf(MessageSafety.SENSITIVE,MessageSafety.UNCERTAIN)
+            }
+            if (priorNeedsReview) {
+                val detail="Recent notification context contains an unresolved or sensitive topic. Review this reply personally."
+                dao.updateMessage(row.copy(generationState="APPROVAL",generationReason=detail))
+                return@withLock detail
+            }
             val history = attempts.filter { it.kind == "AUTO" || it.identityKey == identity }.map {
                 AutomaticReplyAttempt(Instant.ofEpochMilli(it.attemptedAt),it.identityKey ?: it.contactId.orEmpty(),
                     (it.identityKey ?: it.contactId.orEmpty())+":"+Instant.ofEpochMilli(it.attemptedAt).atZone(zone).toLocalDate())

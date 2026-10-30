@@ -10,6 +10,8 @@ import androidx.core.app.Person
 import androidx.core.os.BundleCompat
 import dev.veil.app.domain.MessagingApp
 import dev.veil.app.domain.ObservedNotification
+import dev.veil.app.domain.MessageSafety
+import dev.veil.app.domain.MessageSafetyClassifier
 import java.security.MessageDigest
 import java.util.Locale
 
@@ -81,9 +83,14 @@ internal object NotificationInspector {
         else digest(app.packageName, conversationIdentity, senderIdentity, sender.orEmpty(), preview.orEmpty(),
             messageAt?.toString().orEmpty())
         val reply = selectReply(notification.actions.orEmpty(), app.packageName)
+        val contextNeedsReview = style?.messages?.dropLast(1)?.any { message ->
+            message.person != null && !samePerson(message.person,frameworkUser) && !samePerson(message.person,style.user) &&
+                MessageSafetyClassifier.classify(message.text?.toString().orEmpty()).safety in setOf(MessageSafety.SENSITIVE,MessageSafety.UNCERTAIN)
+        } == true
         return InspectedNotification(
             observation = ObservedNotification(id, keyHash, app, sender, preview, sbn.postTime, messageAt,
-                style != null, isGroup, notification.actions?.size ?: 0, reply != null, conversation, identityKey),
+                style != null, isGroup, notification.actions?.size ?: 0, reply != null, conversation, identityKey,
+                notificationContextNeedsReview = contextNeedsReview),
             rawKey = sbn.key,
             reply = reply,
             contentIntent = notification.contentIntent?.takeIf { it.creatorPackage == app.packageName },

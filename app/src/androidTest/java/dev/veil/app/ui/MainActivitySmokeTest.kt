@@ -3,6 +3,7 @@ package dev.veil.app.ui
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import dev.veil.app.MainActivity
@@ -11,7 +12,6 @@ import dev.veil.app.domain.Appearance
 import dev.veil.app.domain.AccentPalette
 import dev.veil.app.ai.AiConfiguration
 import dev.veil.app.ai.WritingStyle
-import androidx.test.espresso.Espresso
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
@@ -78,9 +78,19 @@ class MainActivitySmokeTest {
         // Mote's route opens the actual studio; the preview uses saved offline templates only.
         compose.onNodeWithContentDescription("Mote, your VEIL guide").performClick()
         compose.onNodeWithText("Open reply settings").performScrollTo().performClick()
+        compose.waitUntil(10_000) { compose.activity.hasWindowFocus() }
         compose.onNodeWithText("A voice that feels like you.").assertIsDisplayed()
         compose.onNodeWithText("A sample incoming message").performScrollTo().performTextInput("Hello")
-        Espresso.closeSoftKeyboard()
+        // Use the owning activity's token instead of Espresso root-window selection,
+        // which failed to find a focused root during this modal/IME handoff in CI.
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.currentFocus?.let { focused ->
+                activity.getSystemService(InputMethodManager::class.java)
+                    .hideSoftInputFromWindow(focused.windowToken, 0)
+                focused.clearFocus()
+            }
+        }
+        compose.waitForIdle()
         compose.onNodeWithText("Preview reply").performScrollTo().assertIsEnabled().performClick()
         compose.waitUntil(30_000) { compose.onAllNodesWithText("Draft preview").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Draft preview").performScrollTo().assertIsDisplayed()

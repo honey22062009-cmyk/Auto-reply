@@ -197,6 +197,17 @@ class AssistantRepositoryTest {
         assertTrue(dispatches.isEmpty())
     }
 
+    @Test fun `a fresh greeting cannot erase a recent financial conversation needing review`() = runBlocking {
+        verifiedContact()
+        repository.record(incoming("prior-financial",text="Please transfer money to my bank account"))
+        clock+=1000
+        repository.record(incoming("greeting-after-financial"))
+        repository.sendReply("greeting-after-financial","Hey!",automatic=true,generatorRequiresApproval=false)
+        assertTrue(dispatches.isEmpty())
+        assertNull(database.dao().findAttempt("greeting-after-financial"))
+        assertEquals("APPROVAL",repository.message("greeting-after-financial")!!.generationState)
+    }
+
     @Test fun `global switch contact pause quiet hours and review warnings deny automation`() = runBlocking {
         var contact = verifiedContact()
         repository.configure(enabled.copy(automationEnabled=false))

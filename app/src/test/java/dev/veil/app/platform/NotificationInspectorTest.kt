@@ -21,6 +21,11 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class NotificationInspectorTest {
+    @Test fun `earlier sensitive notification messages escalate a latest greeting`() {
+        val notification=builder().setStyle(Notification.MessagingStyle(self)
+            .addMessage("Please transfer money",1100,person).addMessage("Hello",1200,person)).build()
+        assertTrue(inspect(notification)!!.observation.notificationContextNeedsReview)
+    }
     @Test @Config(sdk = [28]) fun `Android 9 keeps manual previews without claiming a UID backed automation identity`() {
         val observation = inspect(styleMessage("Hello",1200))!!.observation
         assertEquals("Hello",observation.preview)

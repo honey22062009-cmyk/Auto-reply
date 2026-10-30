@@ -25,6 +25,7 @@ data class ObservedNotification(
     val conversationHint: String? = null,
     val identityKey: String? = null,
     val fromActiveReplay: Boolean = false,
+    val notificationContextNeedsReview: Boolean = false,
 )
 
 enum class ReplyStatus(val label: String) {

@@ -39,13 +39,13 @@ jobs:
             adb install releases/veil-1.0.0.apk
             adb logcat -c -b all
             adb shell am start -W -n dev.veil.app/.MainActivity > release-start.txt
-            rg 'Status: ok' release-start.txt
+            grep 'Status: ok' release-start.txt
             sleep 3
             adb shell pidof dev.veil.app >> release-start.txt
             adb logcat -d -b crash > release-crashes.txt
-            if rg -q 'FATAL EXCEPTION|Fatal signal' release-crashes.txt; then cat release-crashes.txt; exit 1; fi
+            if grep -Eq 'FATAL EXCEPTION|Fatal signal' release-crashes.txt; then cat release-crashes.txt; exit 1; fi
             adb shell dumpsys package dev.veil.app > release-package.txt
-            rg 'versionName=1.0.0' release-package.txt
+            grep 'versionName=1.0.0' release-package.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
