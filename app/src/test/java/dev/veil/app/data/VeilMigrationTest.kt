@@ -17,7 +17,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 import java.util.UUID
 
-/** Opens the checked-in V1 schema with V2 Room: validates the complete migrated schema. */
+/** Opens the checked-in V1 schema with V3 Room: validates both migrations and preserved contacts. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class VeilMigrationTest {
@@ -62,6 +62,9 @@ class VeilMigrationTest {
         assertFalse(contact.compatibilityVerified)
         assertNull(contact.identityKey)
         assertNull(contact.instruction)
+        assertNull(contact.instagramUsername)
+        assertNull(contact.instagramUserId)
+        assertNull(contact.whatsappPhone)
         assertEquals(120, contact.cooldownSeconds)
         assertEquals(5, contact.maxPerHour)
         assertEquals(20, contact.maxPerDay)
