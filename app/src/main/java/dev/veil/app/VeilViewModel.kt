@@ -129,8 +129,9 @@ class VeilViewModel(application: Application) : AndroidViewModel(application) {
     fun dismissMessage(id: String) = work { graph.repository.dismiss(id) }
     fun sendTest(id: String) = work { graph.notice.value = graph.repository.sendTest(id) }
     fun confirmReceipt(id: String) = work { graph.notice.value = graph.repository.confirmReceipt(id) }
-    fun addContact(label: String, app: MessagingApp, sender: String) = work {
-        graph.notice.value = graph.repository.addContact(label, app, sender)
+    fun addContact(label: String, app: MessagingApp, sender: String, username: String = "",
+        userId: String = "", phone: String = "") = work {
+        graph.notice.value = graph.repository.addContact(label, app, sender, username, userId, phone)
     }
     fun removeContact(id: String) {
         graph.platform.suspendAutomaticIdentity(state.value.contacts.firstOrNull { it.id==id }?.identityKey)
