@@ -52,10 +52,10 @@ class MainActivitySmokeTest {
         compose.onNodeWithText("Your first notification starts here.").assertIsDisplayed()
 
         compose.onNodeWithContentDescription("Priority tab").performClick()
-        compose.onNodeWithText("Add priority contact").performClick()
-        compose.onNodeWithText("Local contact label").performTextInput("Synthetic QA contact")
-        compose.onNodeWithText("Exact notification sender").performTextInput("Synthetic QA sender")
-        compose.onNodeWithText("Save contact").performClick()
+        compose.onNodeWithContentDescription("Add WhatsApp person").performClick()
+        compose.onNodeWithText("Name saved on device").performTextInput("Synthetic QA contact")
+        compose.onNodeWithText("Notification sender (if different)").performTextInput("Synthetic QA sender")
+        compose.onNodeWithText("Save person").performClick()
         compose.waitUntil(30_000) {
             compose.onAllNodesWithText("Synthetic QA contact").fetchSemanticsNodes().isNotEmpty()
         }
