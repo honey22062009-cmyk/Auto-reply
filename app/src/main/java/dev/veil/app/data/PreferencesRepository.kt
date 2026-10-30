@@ -41,7 +41,7 @@ class PreferencesRepository(context: Context, private val cipher: TextCipher = S
         glassIntensity = (p[Keys.glass] ?: 0.65f).coerceIn(0f, 1f),
         retentionDays = (p[Keys.retention] ?: 1).coerceIn(1, 7),
         accent = AccentPalette.entries.firstOrNull { it.name == p[Keys.accent] } ?: AccentPalette.ROSE,
-        companionEnabled = p[Keys.companion] ?: true,
+        companionEnabled = p[Keys.companion] ?: false,
         automationEnabled = p[Keys.automation] ?: false,
         ai = decodeAi(p[Keys.ai]),
         style = decodeStyle(cipher.decrypt(p[Keys.style])),
