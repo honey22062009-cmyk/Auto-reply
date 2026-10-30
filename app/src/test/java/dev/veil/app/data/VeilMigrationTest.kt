@@ -126,7 +126,7 @@ class VeilMigrationTest {
     private fun openMigrated(): VeilDatabase {
         return Room.databaseBuilder(context, VeilDatabase::class.java, name)
             .allowMainThreadQueries()
-            .addMigrations(VeilDatabase.MIGRATION_1_2)
+            .addMigrations(VeilDatabase.MIGRATION_1_2, VeilDatabase.MIGRATION_2_3)
             .build().also {
                 // Forces Room's migration and complete generated-schema validation now.
                 it.openHelper.writableDatabase
