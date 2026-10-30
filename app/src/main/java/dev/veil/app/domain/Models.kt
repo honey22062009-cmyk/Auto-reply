@@ -65,7 +65,7 @@ data class VeilPreferences(
     val glassIntensity: Float = 0.65f,
     val retentionDays: Int = 1,
     val accent: AccentPalette = AccentPalette.ROSE,
-    val companionEnabled: Boolean = true,
+    val companionEnabled: Boolean = false,
     val ai: AiConfiguration = AiConfiguration(),
     val style: WritingStyle = WritingStyle(),
     val automationEnabled: Boolean = false,
