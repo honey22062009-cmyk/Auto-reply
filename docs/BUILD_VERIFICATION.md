@@ -29,10 +29,12 @@ b79c3595d936c71b6224c841f74699e9e81f1194d670d2d33fa3417768d124f2
 
 No Samsung Galaxy Tab A9+ is attached. Actual WhatsApp/Instagram detection, reply-action availability, dispatch and receipt remain unverified. See [DEVICE_TEST_GUIDE.md](DEVICE_TEST_GUIDE.md).
 
-The software emulator failed in the stock Android framework before full boot. No app launch, UI screenshot, instrumentation pass, real Keystore result, performance measurement, or recipient receipt is claimed. See [EMULATOR_RESULTS.md](EMULATOR_RESULTS.md). The actual Keystore test is separate from repository tests using a fake cipher.
+The local software emulator failed in the stock Android framework before full boot. That local attempt did not verify app launch, screenshots, UI instrumentation, or actual Keystore behavior; see [EMULATOR_RESULTS.md](EMULATOR_RESULTS.md). Subsequent accelerated GitHub emulator results are recorded separately in [CI_DEVICE_RESULTS.md](CI_DEVICE_RESULTS.md). No Samsung performance measurement or recipient receipt is claimed. Actual Keystore checks are separate from repository tests using a fake cipher.
 
 ## Repository
 
 Source and Git history were successfully pushed to `https://github.com/honey22062009-cmyk/Auto-reply.git` on 2026-10-30 after write access was restored. The initial GitHub Actions run failed during SDK setup because the setup action requested the obsolete `tools` package; both workflows now explicitly request `platform-tools`. Remote CI outcomes are tracked separately from the successful local verification above.
+
+The corrected [GitHub verification run](https://github.com/honey22062009-cmyk/Auto-reply/actions/runs/40994227430) completed successfully for commit `24df4a6379f25efa003848b1c825163d020fb3c7`: unit tests, lint, debug APK, and instrumentation APK all passed their build gates. The [APK and reports artifact](https://github.com/honey22062009-cmyk/Auto-reply/actions/runs/40994227430/artifacts/12951006046) was uploaded with 14-day retention. This remote build uses its own debug signing key; its APK checksum may differ from the local artifact above. The separate emulator workflow result is documented in `CI_DEVICE_RESULTS.md` when available.
 
 Generated APKs, caches, local toolchain configuration, signing keys, and raw build logs are excluded from source control. The workflow uploads build artifacts after successful verification when it can run in GitHub.

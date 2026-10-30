@@ -52,5 +52,7 @@ Debug builds are for evaluation. Keep a dedicated release signing key outside th
 - [Samsung tablet compatibility test guide](docs/DEVICE_TEST_GUIDE.md)
 - [Security and privacy](docs/SECURITY.md)
 - [Build toolchain](docs/TOOLCHAIN.md)
+- [Build verification](docs/BUILD_VERIFICATION.md)
+- [Accelerated emulator test results](docs/CI_DEVICE_RESULTS.md)
 
 The remaining milestones cover explicit per-contact automation, safety/rate rules, modular AI engines, writing style, and measured device reliability. These capabilities are not simulated in Phase 1.
