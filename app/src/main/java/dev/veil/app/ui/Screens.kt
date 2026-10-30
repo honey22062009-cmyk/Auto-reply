@@ -274,14 +274,34 @@ internal fun PriorityScreen(state: VeilUiState, viewModel: VeilViewModel) {
             Text("Notification access is off. You can save people now, then verify them after setup.",
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        PriorityPlatformSection(MessagingApp.WHATSAPP, state.contacts.filter { it.app == MessagingApp.WHATSAPP },
-            state.preferences.automationEnabled, onAdd = { adding = MessagingApp.WHATSAPP },
-            onEdit = { editing = it }, onBind = { binding = it }, onRemove = { removing = it },
-            onPause = { c, paused -> viewModel.saveContact(c.copy(paused = paused)) })
-        PriorityPlatformSection(MessagingApp.INSTAGRAM, state.contacts.filter { it.app == MessagingApp.INSTAGRAM },
-            state.preferences.automationEnabled, onAdd = { adding = MessagingApp.INSTAGRAM },
-            onEdit = { editing = it }, onBind = { binding = it }, onRemove = { removing = it },
-            onPause = { c, paused -> viewModel.saveContact(c.copy(paused = paused)) })
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val wide = maxWidth >= 840.dp && LocalDensity.current.fontScale < 1.5f
+            val whatsapp: @Composable () -> Unit = {
+                PriorityPlatformSection(MessagingApp.WHATSAPP,
+                    state.contacts.filter { it.app == MessagingApp.WHATSAPP },
+                    state.preferences.automationEnabled, onAdd = { adding = MessagingApp.WHATSAPP },
+                    onEdit = { editing = it }, onBind = { binding = it }, onRemove = { removing = it },
+                    onPause = { c, paused -> viewModel.saveContact(c.copy(paused = paused)) })
+            }
+            val instagram: @Composable () -> Unit = {
+                PriorityPlatformSection(MessagingApp.INSTAGRAM,
+                    state.contacts.filter { it.app == MessagingApp.INSTAGRAM },
+                    state.preferences.automationEnabled, onAdd = { adding = MessagingApp.INSTAGRAM },
+                    onEdit = { editing = it }, onBind = { binding = it }, onRemove = { removing = it },
+                    onPause = { c, paused -> viewModel.saveContact(c.copy(paused = paused)) })
+            }
+            if (wide) {
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Column(Modifier.weight(1f)) { whatsapp() }
+                    Column(Modifier.weight(1f)) { instagram() }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    whatsapp()
+                    instagram()
+                }
+            }
+        }
         Text("Names, phone numbers and Instagram IDs help you recognize people. VEIL can only auto-reply after you bind the actual notification identity and confirm a test. Unsupported replies stay manual.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
