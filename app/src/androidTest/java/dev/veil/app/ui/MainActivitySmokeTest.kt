@@ -77,7 +77,7 @@ class MainActivitySmokeTest {
 
         // Test the direct, user-facing reply-style entry point. Mote has its own dedicated UI test.
         compose.onNodeWithContentDescription("Home tab").performClick()
-        compose.onNodeWithText("Reply style").performClick()
+        compose.onNodeWithText("Reply style").performScrollTo().performClick()
         compose.waitUntil(10_000) { compose.activity.hasWindowFocus() }
         compose.onNodeWithText("A voice that feels like you.").assertIsDisplayed()
         compose.onNodeWithText("A sample incoming message").performScrollTo().performTextInput("Hello")
