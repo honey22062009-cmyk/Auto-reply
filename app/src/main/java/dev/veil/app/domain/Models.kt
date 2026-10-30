@@ -53,7 +53,9 @@ data class PriorityContact(val id: String, val label: String, val app: Messaging
     val identityKey: String? = null, val autoEnabled: Boolean = false, val paused: Boolean = false,
     val cooldownSeconds: Int = 120, val maxPerHour: Int = 5, val maxPerDay: Int = 20,
     val maxPerConversation: Int = 3, val quietStartHour: Int = 22, val quietEndHour: Int = 8,
-    val quietEnabled: Boolean = true, val instruction: String = "", val compatibilityVerified: Boolean = false)
+    val quietEnabled: Boolean = true, val instruction: String = "", val compatibilityVerified: Boolean = false,
+    /** User-entered reference details only. These are never platform-verified identifiers. */
+    val instagramUsername: String = "", val instagramUserId: String = "", val whatsappPhone: String = "")
 enum class Appearance { SYSTEM, LIGHT, DARK }
 enum class AccentPalette { ROSE, CORAL, PLUM, AMBER, SILVER }
 data class VeilPreferences(
