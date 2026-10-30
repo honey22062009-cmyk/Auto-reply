@@ -69,6 +69,12 @@ android {
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
 
+// Room exports the same versioned JSON for debug and release. Without ordering,
+// simultaneous KSP tasks can read the other variant's partially written schema.
+tasks.configureEach {
+    if (name == "kspReleaseKotlin") mustRunAfter("kspDebugKotlin")
+}
+
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.04.01")
     implementation(composeBom)
