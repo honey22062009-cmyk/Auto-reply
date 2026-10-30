@@ -75,10 +75,9 @@ class MainActivitySmokeTest {
         compose.waitUntil(30_000) { graph.readyPreferences.value?.accent == AccentPalette.PLUM }
         compose.onNodeWithContentDescription("Plum accent").assertIsSelected()
 
-        // The optional guide lives on Home rather than covering each workspace screen.
+        // Test the direct, user-facing reply-style entry point. Mote has its own dedicated UI test.
         compose.onNodeWithContentDescription("Home tab").performClick()
-        compose.onNodeWithContentDescription("Mote, your VEIL guide").performClick()
-        compose.onNodeWithText("Open reply settings").performScrollTo().performClick()
+        compose.onNodeWithText("Reply style").performClick()
         compose.waitUntil(10_000) { compose.activity.hasWindowFocus() }
         compose.onNodeWithText("A voice that feels like you.").assertIsDisplayed()
         compose.onNodeWithText("A sample incoming message").performScrollTo().performTextInput("Hello")
