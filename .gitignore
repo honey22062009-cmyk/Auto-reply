@@ -13,6 +13,7 @@ toolchain.env
 *.log
 dist/
 *.apk
+!releases/veil-1.0.0.apk
 *.apks
 *.aab
 *.env

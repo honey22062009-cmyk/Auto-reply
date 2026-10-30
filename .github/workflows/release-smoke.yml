@@ -1,0 +1,57 @@
+name: Signed release launch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-launch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+          log-accepted-android-sdk-licenses: false
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Install and launch the exact signed release APK
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_c
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-audio -no-boot-anim -camera-back none -camera-front none
+          script: |
+            sha256sum -c releases/SHA256SUMS.txt
+            adb install releases/veil-1.0.0.apk
+            adb logcat -c -b all
+            adb shell am start -W -n dev.veil.app/.MainActivity > release-start.txt
+            rg 'Status: ok' release-start.txt
+            sleep 3
+            adb shell pidof dev.veil.app >> release-start.txt
+            adb logcat -d -b crash > release-crashes.txt
+            if rg -q 'FATAL EXCEPTION|Fatal signal' release-crashes.txt; then cat release-crashes.txt; exit 1; fi
+            adb shell dumpsys package dev.veil.app > release-package.txt
+            rg 'versionName=1.0.0' release-package.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: veil-signed-release-launch
+          path: |
+            release-start.txt
+            release-crashes.txt
+            release-package.txt
+          retention-days: 14
