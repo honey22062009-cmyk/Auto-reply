@@ -2,9 +2,9 @@
 
 A standalone Android messaging companion built with Kotlin, Jetpack Compose, Room, and supported Android notification APIs. Application ID: `dev.veil.app`. VEIL is independent of Strict Blocker.
 
-## Version 1.2: Aurora visual refresh
+## Version 1.2: warm editorial visual refresh
 
-The updated Compose theme offers **Aurora** (dual-tone violet/blue), **Violet**, and **Azure** palettes with matched light and dark surfaces, static softly blurred decorative glows, stronger glass-card contrast, gradient dock selection, dashboard metric tiles, and a live palette preview in Settings. New installs default to Aurora; existing users keep their previously saved accent until they explicitly change it. Appearance and glass intensity remain separate preferences. This is a layered-glass approximation, not real operating-system backdrop sampling. The theme adds no AI provider, tracking, or network activity.
+The updated Compose theme avoids generic neon purple/blue AI gradients and offers **Sunset** (coral/peach), **Blossom** (rose/blush), and **Champagne** (cream/gold) color palettes, with carefully matched ivory and espresso surfaces for light/dark mode, static decorative glows, more readable glass cards, soft gradient dock selection, clean dashboard metrics, and a live preview in Settings. New installations default to Sunset; existing users retain their saved choice. Legacy color settings migrate safely, with the old Plum name shown as a warmer Burgundy treatment. The design is an efficient layered-glass approximation, not system-level backdrop sampling. These visual updates add no AI provider, tracking, or network activity.
 
 ## Version 1.1: separate platform people
 
@@ -18,7 +18,7 @@ Existing data is migrated with Room v2→v3, retaining saved contacts, settings,
 
 VEIL reads accessible notifications from the official WhatsApp and Instagram Android apps that you explicitly enable. It offers local reply templates, optional OpenAI drafts, manual review and editing, a compatibility lab, and deliberately restricted contact automation. This is a notification-derived view, not a replacement for either app's complete inbox.
 
-The interface includes a floating glass-style navigation dock, tablet layouts, light/dark/system appearance, Aurora (violet/blue), Violet, Azure, Rose, Coral, Plum, Amber, and Silver palettes, glass intensity, reduced motion, and **Mote**, an optional interactive companion that guides you to useful app screens. Mote is deterministic guidance, not an AI chatbot. Glass rendering uses supported effects and layered translucency; it does not claim native system-level backdrop sampling.
+The interface includes a floating glass-style navigation dock, tablet layouts, light/dark/system appearance, Sunset, Blossom, Champagne, Rose, Coral, Burgundy, Amber, and Linen palettes, glass intensity, reduced motion, and **Mote**, an optional interactive companion that guides you to useful app screens. Mote is deterministic guidance, not an AI chatbot. Glass rendering uses supported effects and layered translucency; it does not claim native system-level backdrop sampling.
 
 ### Sending stays under your control
 
