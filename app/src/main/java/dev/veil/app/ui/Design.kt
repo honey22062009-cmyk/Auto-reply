@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -148,13 +149,17 @@ fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette
 internal fun VeilBackdrop(modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     Box(modifier.background(colors.background)) {
-        Canvas(Modifier.fillMaxSize().then(if (Build.VERSION.SDK_INT >= 31) Modifier.blur(54.dp) else Modifier)) {
-            drawCircle(Brush.radialGradient(listOf(colors.primary.copy(alpha = .12f), Color.Transparent),
-                center = Offset(size.width * .98f, size.height * .1f), radius = size.width * .7f),
-                radius = size.width * .7f, center = Offset(size.width * .98f, size.height * .1f))
-            drawCircle(Brush.radialGradient(listOf(colors.secondary.copy(alpha = .075f), Color.Transparent),
-                center = Offset(size.width * .1f, size.height * .9f), radius = size.width * .8f),
-                radius = size.width * .8f, center = Offset(size.width * .1f, size.height * .9f))
+        Canvas(Modifier.fillMaxSize().then(if (Build.VERSION.SDK_INT >= 31) Modifier.blur(46.dp) else Modifier)) {
+            val wide = size.width.coerceAtLeast(1f)
+            val glowA = Offset(size.width * .86f, size.height * .06f)
+            val glowB = Offset(size.width * .05f, size.height * .76f)
+            val glowC = Offset(size.width * .63f, size.height * .95f)
+            drawCircle(Brush.radialGradient(listOf(colors.primary.copy(alpha = .19f), Color.Transparent),
+                center = glowA, radius = wide * .76f), radius = wide * .76f, center = glowA)
+            drawCircle(Brush.radialGradient(listOf(colors.secondary.copy(alpha = .14f), Color.Transparent),
+                center = glowB, radius = wide * .82f), radius = wide * .82f, center = glowB)
+            drawCircle(Brush.radialGradient(listOf(colors.tertiary.copy(alpha = .08f), Color.Transparent),
+                center = glowC, radius = wide * .52f), radius = wide * .52f, center = glowC)
         }
     }
 }
@@ -163,11 +168,21 @@ internal fun VeilBackdrop(modifier: Modifier = Modifier) {
 internal fun GlassPanel(modifier: Modifier = Modifier, intensity: Float = LocalGlassIntensity.current, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(24.dp)
+    val dark = colors.background.luminance() < .4f
     Column(
-        modifier.shadow(10.dp, shape, ambientColor = colors.primary.copy(alpha = .07f), spotColor = colors.primary.copy(alpha = .08f))
+        modifier.shadow(12.dp, shape, ambientColor = colors.primary.copy(alpha = .12f), spotColor = colors.secondary.copy(alpha = .12f))
             .clip(shape)
-            .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .94f - intensity * .32f), colors.surfaceVariant.copy(alpha = .87f - intensity * .24f), colors.surface.copy(alpha = .90f - intensity * .20f))))
-            .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .34f), colors.outlineVariant.copy(alpha = .35f), Color.White.copy(alpha = .1f))), shape)
+            .background(Brush.linearGradient(listOf(
+                colors.surface.copy(alpha = .98f - intensity * .10f),
+                colors.primaryContainer.copy(alpha = if (dark) .28f else .46f),
+                colors.secondaryContainer.copy(alpha = if (dark) .27f else .41f),
+                colors.surface.copy(alpha = .97f - intensity * .08f)
+            )))
+            .border(1.dp, Brush.linearGradient(listOf(
+                Color.White.copy(alpha = if (dark) .20f else .92f),
+                colors.primary.copy(alpha = .24f), colors.secondary.copy(alpha = .22f),
+                Color.White.copy(alpha = if (dark) .09f else .48f)
+            )), shape)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp), content = content,
     )
@@ -190,15 +205,26 @@ internal fun FloatingDock(selectedRoute: String?, reducedMotion: Boolean, intens
     val motionReduced = effectiveReducedMotion(reducedMotion)
     val defaultDockHeight = 51.dp + (15 * fontScale).dp
     val selectedIndex = Destination.entries.indexOfFirst { it.route == selectedRoute }.coerceAtLeast(0)
-    val surface = modifier.shadow(18.dp, shape, ambientColor = colors.primary.copy(alpha = .16f), spotColor = colors.primary.copy(alpha = .13f))
+    val dark = colors.background.luminance() < .4f
+    val surface = modifier.shadow(18.dp, shape, ambientColor = colors.primary.copy(alpha = .20f), spotColor = colors.secondary.copy(alpha = .17f))
         .clip(shape)
-        .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .91f - intensity * .31f), colors.surfaceVariant.copy(alpha = .86f - intensity * .31f), colors.surface.copy(alpha = .87f - intensity * .27f))))
-        .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .76f), colors.outlineVariant.copy(alpha = .31f), Color.White.copy(alpha = .32f))), shape)
+        .background(Brush.linearGradient(listOf(
+            colors.surface.copy(alpha = .96f - intensity * .13f),
+            colors.primaryContainer.copy(alpha = if (dark) .26f else .48f),
+            colors.secondaryContainer.copy(alpha = if (dark) .25f else .47f),
+            colors.surface.copy(alpha = .97f - intensity * .10f)
+        )))
+        .border(1.dp, Brush.linearGradient(listOf(
+            Color.White.copy(alpha = if (dark) .29f else .96f),
+            colors.primary.copy(alpha = .29f), colors.secondary.copy(alpha = .31f)
+        )), shape)
     if (rail) {
         Column(surface.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Destination.entries.forEach { item ->
                 DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.width(78.dp).heightIn(min = defaultDockHeight)
-                    .background(if (item.route == selectedRoute) colors.primaryContainer.copy(alpha = .56f) else Color.Transparent, RoundedCornerShape(27.dp)))
+                    .then(if (item.route == selectedRoute) Modifier.background(
+                        Brush.linearGradient(listOf(colors.primaryContainer, colors.secondaryContainer.copy(alpha = .82f))),
+                        RoundedCornerShape(27.dp)) else Modifier))
             }
         }
     } else {
@@ -209,8 +235,9 @@ internal fun FloatingDock(selectedRoute: String?, reducedMotion: Boolean, intens
             val offset = animateDpAsState(itemWidth * selectedIndex, tween(if (motionReduced) 0 else 250), label = "dock highlight")
             if (Destination.entries.any { it.route == selectedRoute }) {
                 Box(Modifier.offset { IntOffset(offset.value.roundToPx(), 0) }.width(itemWidth).height(dockHeight).clip(RoundedCornerShape(29.dp))
-                    .background(Brush.verticalGradient(listOf(colors.primaryContainer.copy(alpha = .67f), colors.primaryContainer.copy(alpha = .26f))))
-                    .border(1.dp, Color.White.copy(alpha = .55f), RoundedCornerShape(29.dp)))
+                    .background(Brush.linearGradient(listOf(colors.primaryContainer.copy(alpha = .93f),
+                        colors.secondaryContainer.copy(alpha = .85f))))
+                    .border(1.dp, colors.primary.copy(alpha = .20f), RoundedCornerShape(29.dp)))
             }
             Row { Destination.entries.forEach { item -> DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.weight(1f).heightIn(min = dockHeight), showLabel = showLabels) } }
         }
@@ -238,7 +265,8 @@ internal fun Eyebrow(text: String, modifier: Modifier = Modifier) = Text(text.up
 internal fun PageHeading(title: String, subtitle: String, action: (@Composable () -> Unit)? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("V E I L", style = MaterialTheme.typography.labelLarge, letterSpacing = 3.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("V E I L", style = MaterialTheme.typography.labelLarge, letterSpacing = 3.sp,
+                color = MaterialTheme.colorScheme.primary)
             action?.invoke()
         }
         Spacer(Modifier.height(8.dp))
