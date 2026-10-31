@@ -13,8 +13,8 @@ android {
         applicationId = "dev.veil.app"
         minSdk = 28
         targetSdk = 35
-        versionCode = 101
-        versionName = "1.1.0"
+        versionCode = 102
+        versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
