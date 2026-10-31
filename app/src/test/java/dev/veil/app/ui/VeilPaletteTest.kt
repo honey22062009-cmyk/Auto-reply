@@ -10,7 +10,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class VeilPaletteTest {
-    @Test fun newUsersStartWithAuroraButCanSelectDistinctPurpleAndBlue() {
+    @Test fun newUsersStartWithSunsetButCanSelectDistinctWarmPalettes() {
         assertEquals(AccentPalette.SUNSET, VeilPreferences().accent)
         assertNotEquals(veilColorScheme(false, AccentPalette.SUNSET).primary,
             veilColorScheme(false, AccentPalette.BLOSSOM).primary)
