@@ -56,7 +56,7 @@ internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab:
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text("${accentLabel(preferences.accent)} glow", style = MaterialTheme.typography.titleMedium,
                         color = colors.onPrimaryContainer)
-                    Text("Soft gradients · readable glass · calm contrast",
+                    Text("Warm tones · readable glass · calm contrast",
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.onPrimaryContainer)
                 }
