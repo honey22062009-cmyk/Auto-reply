@@ -40,7 +40,7 @@ class PreferencesRepository(context: Context, private val cipher: TextCipher = S
         reduceMotion = p[Keys.motion] ?: false,
         glassIntensity = (p[Keys.glass] ?: 0.65f).coerceIn(0f, 1f),
         retentionDays = (p[Keys.retention] ?: 1).coerceIn(1, 7),
-        accent = AccentPalette.entries.firstOrNull { it.name == p[Keys.accent] } ?: AccentPalette.ROSE,
+        accent = AccentPalette.entries.firstOrNull { it.name == p[Keys.accent] } ?: AccentPalette.AURORA,
         companionEnabled = p[Keys.companion] ?: false,
         automationEnabled = p[Keys.automation] ?: false,
         ai = decodeAi(p[Keys.ai]),
