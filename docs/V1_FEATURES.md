@@ -12,7 +12,7 @@ No supported action means no automatic platform integration is invented. Copy a 
 
 ## Glass, colors, and Mote
 
-Light, dark, and system themes combine with five accents: Rose, Coral, Plum, Amber, and Silver. Glass intensity changes the visual treatment. The floating capsule dock adapts to a navigation rail in sufficiently wide windows. Layouts account for system insets, split-screen sizing, and large text.
+Light, dark, and system themes combine with eight warm palettes: Sunset, Blossom, Champagne, Rose, Coral, Burgundy, Amber, and Linen. New installs default to Sunset while saved legacy selections are retained. Glass intensity changes the visual treatment. The floating capsule dock adapts to a navigation rail in sufficiently wide windows. Layouts account for system insets, split-screen sizing, and large text.
 
 Glass is a supported-effects approximation: layered translucency, restrained light, edges, and decorative blur where supported. It does not claim operating-system backdrop sampling or allow decorative effects to replace readable surfaces.
 
