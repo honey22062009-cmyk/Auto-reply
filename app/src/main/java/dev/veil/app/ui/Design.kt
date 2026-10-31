@@ -43,62 +43,72 @@ import dev.veil.app.domain.Appearance
 import dev.veil.app.domain.AccentPalette
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF5740BE), onPrimary = Color.White,
-    primaryContainer = Color(0xFFE8E0FF), onPrimaryContainer = Color(0xFF301A70),
-    secondary = Color(0xFF295FB6), onSecondary = Color.White,
-    secondaryContainer = Color(0xFFDDE9FF), onSecondaryContainer = Color(0xFF173A77),
-    tertiary = Color(0xFF476DCC), onTertiary = Color.White,
-    tertiaryContainer = Color(0xFFE1E9FF), onTertiaryContainer = Color(0xFF193A7D),
-    background = Color(0xFFF6F7FF), onBackground = Color(0xFF24283C),
-    surface = Color(0xFFFFFFFF), onSurface = Color(0xFF24283C),
-    surfaceVariant = Color(0xFFEEF0FA), onSurfaceVariant = Color(0xFF50566F),
-    outline = Color(0xFF737992), outlineVariant = Color(0xFFCED2E4),
-    error = Color(0xFFB33450), errorContainer = Color(0xFFFFDBE2),
+    primary = Color(0xFFA23F39), onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFE0D9), onPrimaryContainer = Color(0xFF652B29),
+    secondary = Color(0xFF915435), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFE9D4), onSecondaryContainer = Color(0xFF5A361F),
+    tertiary = Color(0xFF956A35), onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFEBC6), onTertiaryContainer = Color(0xFF573B1F),
+    background = Color(0xFFFFF9F5), onBackground = Color(0xFF302A29),
+    surface = Color(0xFFFFFEFC), onSurface = Color(0xFF302A29),
+    surfaceVariant = Color(0xFFF6EBE4), onSurfaceVariant = Color(0xFF675A55),
+    outline = Color(0xFF88746C), outlineVariant = Color(0xFFE2D0C6),
+    error = Color(0xFFA63340), errorContainer = Color(0xFFFFDDE1),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFBBAFFF), onPrimary = Color(0xFF251456),
-    primaryContainer = Color(0xFF403678), onPrimaryContainer = Color(0xFFF0EBFF),
-    secondary = Color(0xFFA4C7FF), onSecondary = Color(0xFF122B4A),
-    secondaryContainer = Color(0xFF26486E), onSecondaryContainer = Color(0xFFE0EEFF),
-    tertiary = Color(0xFF92B9FF), onTertiary = Color(0xFF132B51),
-    tertiaryContainer = Color(0xFF263D63), onTertiaryContainer = Color(0xFFE4EEFF),
-    background = Color(0xFF101423), onBackground = Color(0xFFF2F2FF),
-    surface = Color(0xFF1B2134), onSurface = Color(0xFFF2F2FF),
-    surfaceVariant = Color(0xFF292F47), onSurfaceVariant = Color(0xFFC3CAE1),
-    outline = Color(0xFF969CB7), outlineVariant = Color(0xFF414963),
-    error = Color(0xFFFFB4C2), errorContainer = Color(0xFF67283D),
+    primary = Color(0xFFFFB7AA), onPrimary = Color(0xFF552820),
+    primaryContainer = Color(0xFF69372F), onPrimaryContainer = Color(0xFFFFE3DA),
+    secondary = Color(0xFFF2C29D), onSecondary = Color(0xFF4A2E1D),
+    secondaryContainer = Color(0xFF5A3D2B), onSecondaryContainer = Color(0xFFFFE7D3),
+    tertiary = Color(0xFFE8C795), onTertiary = Color(0xFF4D341E),
+    tertiaryContainer = Color(0xFF59442C), onTertiaryContainer = Color(0xFFFFECCB),
+    background = Color(0xFF1F1A1B), onBackground = Color(0xFFFFF1EA),
+    surface = Color(0xFF2B2323), onSurface = Color(0xFFFFF1EA),
+    surfaceVariant = Color(0xFF3D3030), onSurfaceVariant = Color(0xFFDFC9BE),
+    outline = Color(0xFFC2A89B), outlineVariant = Color(0xFF5A4541),
+    error = Color(0xFFFFB3BF), errorContainer = Color(0xFF682A36),
 )
 
-/** Palette text pairs are checked against WCAG AA; surfaces stay neutral for readability. */
+/** Warm, editorial color systems. Avoid the conventional neon purple/blue AI aesthetic. */
 internal fun veilColorScheme(dark: Boolean, palette: AccentPalette): ColorScheme {
     val tones = when (palette) {
-        AccentPalette.ROSE -> if (dark) listOf(0xFFDFB0BE, 0xFF452D36, 0xFF533843, 0xFFF7DCE6) else listOf(0xFF885563, 0xFFFFFFFF, 0xFFF2DDE3, 0xFF4C3039)
-        AccentPalette.CORAL -> if (dark) listOf(0xFFE9B49F, 0xFF4B2D24, 0xFF623F33, 0xFFFFE1D5) else listOf(0xFF98523F, 0xFFFFFFFF, 0xFFF9E0D6, 0xFF603527)
-        AccentPalette.PLUM -> if (dark) listOf(0xFFD1B6CC, 0xFF412E3E, 0xFF513D4F, 0xFFEFDDEB) else listOf(0xFF73566F, 0xFFFFFFFF, 0xFFECDDEB, 0xFF493246)
-        AccentPalette.AMBER -> if (dark) listOf(0xFFDBC39C, 0xFF3E301C, 0xFF55452E, 0xFFEFE2C8) else listOf(0xFF785C32, 0xFFFFFFFF, 0xFFF1E3C9, 0xFF4F3B20)
-        AccentPalette.SILVER -> if (dark) listOf(0xFFCBC5D2, 0xFF333039, 0xFF49454F, 0xFFE8E1EC) else listOf(0xFF62616A, 0xFFFFFFFF, 0xFFE5E2EB, 0xFF393842)
-        AccentPalette.AURORA -> if (dark) listOf(0xFFBBAFFF, 0xFF251456, 0xFF403678, 0xFFF0EBFF) else listOf(0xFF5740BE, 0xFFFFFFFF, 0xFFE8E0FF, 0xFF301A70)
-        AccentPalette.VIOLET -> if (dark) listOf(0xFFC5ABFF, 0xFF2D155D, 0xFF493276, 0xFFF1E7FF) else listOf(0xFF623DBB, 0xFFFFFFFF, 0xFFEAE0FF, 0xFF351B74)
-        AccentPalette.AZURE -> if (dark) listOf(0xFFA6CBFF, 0xFF112F5A, 0xFF25496F, 0xFFE4F0FF) else listOf(0xFF285EAB, 0xFFFFFFFF, 0xFFDDEBFF, 0xFF173969)
+        AccentPalette.ROSE -> if (dark) listOf(0xFFFFB4BF, 0xFF55282F, 0xFF67333C, 0xFFFFE3E8)
+            else listOf(0xFFA13E57, 0xFFFFFFFF, 0xFFFFDEE5, 0xFF692839)
+        AccentPalette.CORAL -> if (dark) listOf(0xFFFFB39F, 0xFF54281F, 0xFF683B2F, 0xFFFFE4D9)
+            else listOf(0xFFA24A34, 0xFFFFFFFF, 0xFFFFE1D7, 0xFF6F3527)
+        // Preserve previously stored enum names without introducing purple-tinted UI.
+        AccentPalette.PLUM -> if (dark) listOf(0xFFFFBBC0, 0xFF57282F, 0xFF68343B, 0xFFFFE1E5)
+            else listOf(0xFF893B43, 0xFFFFFFFF, 0xFFFCE0E1, 0xFF622A32)
+        AccentPalette.AMBER -> if (dark) listOf(0xFFE8CA98, 0xFF46311C, 0xFF59442B, 0xFFFFECCB)
+            else listOf(0xFF7A542A, 0xFFFFFFFF, 0xFFFFEDCB, 0xFF543A1F)
+        AccentPalette.SILVER -> if (dark) listOf(0xFFD9C9BE, 0xFF40312B, 0xFF584841, 0xFFFFE9DB)
+            else listOf(0xFF69564C, 0xFFFFFFFF, 0xFFEFE5DF, 0xFF483A33)
+        AccentPalette.SUNSET -> if (dark) listOf(0xFFFFB7AA, 0xFF552820, 0xFF69372F, 0xFFFFE3DA)
+            else listOf(0xFFA23F39, 0xFFFFFFFF, 0xFFFFE0D9, 0xFF652B29)
+        AccentPalette.BLOSSOM -> if (dark) listOf(0xFFFFB7C6, 0xFF582932, 0xFF703744, 0xFFFFDFE7)
+            else listOf(0xFFA3415F, 0xFFFFFFFF, 0xFFFFDFE8, 0xFF69293E)
+        AccentPalette.CHAMPAGNE -> if (dark) listOf(0xFFE8CA98, 0xFF46311C, 0xFF59442B, 0xFFFFECCB)
+            else listOf(0xFF7A542A, 0xFFFFFFFF, 0xFFFFEDCB, 0xFF543A1F)
     }
-    val accentSecondary = when (palette) {
-        AccentPalette.AURORA, AccentPalette.VIOLET -> if (dark) Color(0xFFA4C7FF) else Color(0xFF295FB6)
-        AccentPalette.AZURE -> if (dark) Color(0xFFC9ADFF) else Color(0xFF663DAF)
-        else -> (if (dark) DarkColors else LightColors).secondary
+    val base = if (dark) DarkColors else LightColors
+    val second = when (palette) {
+        AccentPalette.BLOSSOM, AccentPalette.ROSE -> if (dark) Color(0xFFF4BFA0) else Color(0xFF935039)
+        AccentPalette.CHAMPAGNE, AccentPalette.AMBER -> if (dark) Color(0xFFFFC4A2) else Color(0xFF995638)
+        else -> base.secondary
     }
-    val accentContainer = when (palette) {
-        AccentPalette.AURORA, AccentPalette.VIOLET -> if (dark) Color(0xFF26486E) else Color(0xFFDDE9FF)
-        AccentPalette.AZURE -> if (dark) Color(0xFF493569) else Color(0xFFEBE1FF)
-        else -> (if (dark) DarkColors else LightColors).secondaryContainer
+    val secondContainer = when (palette) {
+        AccentPalette.BLOSSOM, AccentPalette.ROSE -> if (dark) Color(0xFF5C3D32) else Color(0xFFFFE8D8)
+        AccentPalette.CHAMPAGNE, AccentPalette.AMBER -> if (dark) Color(0xFF5F3B2D) else Color(0xFFFFE1D5)
+        else -> base.secondaryContainer
     }
-    return (if (dark) DarkColors else LightColors).copy(
+    return base.copy(
         primary = Color(tones[0]), onPrimary = Color(tones[1]),
         primaryContainer = Color(tones[2]), onPrimaryContainer = Color(tones[3]),
-        secondary = accentSecondary, onSecondary = if (dark) Color(0xFF142A4D) else Color.White,
-        secondaryContainer = accentContainer,
-        onSecondaryContainer = if (dark) Color(0xFFF0E9FF) else Color(0xFF25315B),
-        tertiary = if (dark) Color(0xFF93B6FF) else Color(0xFF4166C0),
+        secondary = second, onSecondary = if (dark) Color(0xFF4A2E1D) else Color.White,
+        secondaryContainer = secondContainer,
+        onSecondaryContainer = if (dark) Color(0xFFFFE7D3) else Color(0xFF58341F),
+        tertiary = if (dark) Color(0xFFE8C795) else Color(0xFF956A35),
     )
 }
 
@@ -111,7 +121,7 @@ internal fun effectiveReducedMotion(preference: Boolean): Boolean {
 internal val LocalGlassIntensity = staticCompositionLocalOf { .65f }
 
 @Composable
-fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.AURORA, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
+fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.SUNSET, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
     val dark = when (appearance) {
         Appearance.DARK -> true
         Appearance.LIGHT -> false
