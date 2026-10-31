@@ -71,9 +71,9 @@ class MainActivitySmokeTest {
         compose.onNodeWithText("Dark").performClick()
         compose.waitUntil(30_000) { graph.readyPreferences.value?.appearance == Appearance.DARK }
         compose.onNodeWithText("Dark").assertIsSelected()
-        compose.onNodeWithContentDescription("Plum accent").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Burgundy accent").performScrollTo().performClick()
         compose.waitUntil(30_000) { graph.readyPreferences.value?.accent == AccentPalette.PLUM }
-        compose.onNodeWithContentDescription("Plum accent").assertIsSelected()
+        compose.onNodeWithContentDescription("Burgundy accent").assertIsSelected()
 
         // Test the direct, user-facing reply-style entry point. Mote has its own dedicated UI test.
         compose.onNodeWithContentDescription("Home tab").performClick()
