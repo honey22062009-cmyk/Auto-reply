@@ -57,7 +57,7 @@ data class PriorityContact(val id: String, val label: String, val app: Messaging
     /** User-entered reference details only. These are never platform-verified identifiers. */
     val instagramUsername: String = "", val instagramUserId: String = "", val whatsappPhone: String = "")
 enum class Appearance { SYSTEM, LIGHT, DARK }
-enum class AccentPalette { ROSE, CORAL, PLUM, AMBER, SILVER, AURORA, VIOLET, AZURE }
+enum class AccentPalette { ROSE, CORAL, PLUM, AMBER, SILVER, SUNSET, BLOSSOM, CHAMPAGNE }
 data class VeilPreferences(
     val onboarded: Boolean = false,
     val enabledApps: Set<MessagingApp> = emptySet(),
@@ -66,7 +66,7 @@ data class VeilPreferences(
     val reduceMotion: Boolean = false,
     val glassIntensity: Float = 0.65f,
     val retentionDays: Int = 1,
-    val accent: AccentPalette = AccentPalette.AURORA,
+    val accent: AccentPalette = AccentPalette.SUNSET,
     val companionEnabled: Boolean = false,
     val ai: AiConfiguration = AiConfiguration(),
     val style: WritingStyle = WritingStyle(),
