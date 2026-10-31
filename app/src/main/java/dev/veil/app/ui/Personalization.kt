@@ -1,10 +1,13 @@
 package dev.veil.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -30,7 +33,12 @@ internal fun AccentSelector(selected: AccentPalette, onSelect: (AccentPalette) -
         AccentPalette.entries.forEach { palette ->
             FilterChip(selected = selected == palette, onClick = { onSelect(palette) },
                 label = { Text(accentLabel(palette)) },
-                leadingIcon = { Box(Modifier.size(14.dp).background(veilColorScheme(false, palette).primary, CircleShape)) },
+                leadingIcon = {
+                    val preview = veilColorScheme(false, palette)
+                    Box(Modifier.size(18.dp)
+                        .background(Brush.linearGradient(listOf(preview.primary, preview.secondary)), CircleShape)
+                        .border(1.dp, Color.White.copy(alpha = .75f), CircleShape))
+                },
                 modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "${accentLabel(palette)} accent" })
         }
     }
