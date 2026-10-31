@@ -18,12 +18,12 @@ import dev.veil.app.domain.AccentPalette
 internal fun accentLabel(palette: AccentPalette): String = when (palette) {
     AccentPalette.ROSE -> "Rose"
     AccentPalette.CORAL -> "Coral"
-    AccentPalette.PLUM -> "Plum"
+    AccentPalette.PLUM -> "Burgundy"
     AccentPalette.AMBER -> "Amber"
-    AccentPalette.SILVER -> "Silver"
-    AccentPalette.AURORA -> "Aurora"
-    AccentPalette.VIOLET -> "Violet"
-    AccentPalette.AZURE -> "Azure"
+    AccentPalette.SILVER -> "Linen"
+    AccentPalette.SUNSET -> "Sunset"
+    AccentPalette.BLOSSOM -> "Blossom"
+    AccentPalette.CHAMPAGNE -> "Champagne"
 }
 
 @OptIn(ExperimentalLayoutApi::class)
