@@ -13,8 +13,8 @@ android {
         applicationId = "dev.veil.app"
         minSdk = 28
         targetSdk = 35
-        versionCode = 100
-        versionName = "1.0.0"
+        versionCode = 102
+        versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -68,6 +68,12 @@ android {
 }
 
 ksp { arg("room.schemaLocation", "$projectDir/schemas") }
+
+// Room exports the same versioned JSON for debug and release. Without ordering,
+// simultaneous KSP tasks can read the other variant's partially written schema.
+tasks.configureEach {
+    if (name == "kspReleaseKotlin") mustRunAfter("kspDebugKotlin")
+}
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2025.04.01")

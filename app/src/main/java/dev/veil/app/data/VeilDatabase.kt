@@ -58,6 +58,10 @@ data class ContactEntity(
     @ColumnInfo(defaultValue = "1") val quietEnabled: Boolean = true,
     val instruction: String? = null,
     @ColumnInfo(defaultValue = "0") val compatibilityVerified: Boolean = false,
+    /** Encrypted, user-supplied reference hints. Not authorization for automatic dispatch. */
+    val instagramUsername: String? = null,
+    val instagramUserId: String? = null,
+    val whatsappPhone: String? = null,
 )
 
 /** Content-free dispatch ledger survives message-history deletion and retention. */
@@ -112,11 +116,19 @@ interface VeilDao {
     @Query("SELECT COUNT(*) FROM events") suspend fun eventCount(): Int
 }
 
-@Database(entities = [MessageEntity::class, EventEntity::class, ContactEntity::class, ReplyAttemptEntity::class], version = 2, exportSchema = true)
+@Database(entities = [MessageEntity::class, EventEntity::class, ContactEntity::class, ReplyAttemptEntity::class], version = 3, exportSchema = true)
 abstract class VeilDatabase : RoomDatabase() {
     abstract fun dao(): VeilDao
 
     companion object {
+        /** Preserve existing priority contacts while adding encrypted contact reference fields. */
+        val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE contacts ADD COLUMN instagramUsername TEXT")
+                db.execSQL("ALTER TABLE contacts ADD COLUMN instagramUserId TEXT")
+                db.execSQL("ALTER TABLE contacts ADD COLUMN whatsappPhone TEXT")
+            }
+        }
         /** Additive migration: old encrypted fields and dispatch outcomes remain intact. */
         val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {

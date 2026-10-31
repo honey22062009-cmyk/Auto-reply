@@ -1,11 +1,16 @@
 package dev.veil.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -19,6 +24,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.veil.app.VeilViewModel
@@ -44,16 +50,16 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
     }
     val today = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     ScreenBody {
-        PageHeading("Your conversations.\nA little more breathing room.", "Thoughtful replies. A calmer way to keep in touch.")
+        PageHeading("Your conversations.\nA little more breathing room.", "A calm command center for your private messages.")
         GlassPanel(intensity = prefs.glassIntensity, modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Eyebrow("Your companion")
+                Eyebrow("Your workspace")
                 Icon(Icons.Outlined.BlurOn, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Text(status, style = MaterialTheme.typography.headlineMedium)
-            Text(if (prefs.automationEnabled) "Only explicitly configured priority rules can send automatically. Sensitive or uncertain messages stay for review." else "Suggestions first. Automatic sending stays off until you enable it globally and for an identity-bound, tested priority contact.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(if (prefs.automationEnabled) "Only approved priority rules may send. Anything sensitive stays for your review." else "Suggestions are ready. Automatic replies remain off until you choose and verify a contact.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
-            InfoRow(Icons.Outlined.PauseCircleOutline, "Pause everything", "Stops observation and blocks all reply dispatch.",
+            InfoRow(Icons.Outlined.PauseCircleOutline, "Pause everything", "Stops observing messages and prevents new replies.",
                 trailing = { Switch(prefs.capturePaused, onPause, modifier = Modifier.semantics { contentDescription = "Pause everything" }) })
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 MessagingApp.entries.forEach { app -> StatusPill("${app.label} ${if (app in prefs.enabledApps) "on" else "off"}") }
@@ -72,19 +78,27 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
                 Metric("${state.contacts.size}", "Priority contacts", Modifier.weight(1f))
             }
         }
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Eyebrow("Your voice")
-            Text(if (prefs.ai.provider == dev.veil.app.ai.AiProvider.OPENAI) "OpenAI · cloud replies" else "Templates · on-device replies", style = MaterialTheme.typography.titleLarge)
-            Text("${prefs.style.language.name.lowercase().replaceFirstChar { it.uppercase() }} · ${prefs.style.maxCharacters} character preference", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            TextButton(onClick = onAi, modifier = Modifier.heightIn(min = 48.dp)) { Text("Open reply studio") }
-        }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .55f))
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Eyebrow("The next small step")
-            Text("Know what works on your tablet.", style = MaterialTheme.typography.titleLarge)
-            Text("The Compatibility Lab separates a detected notification, an available reply action, and a successful Android dispatch.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            FilledTonalButton(onClick = onLab, modifier = Modifier.heightIn(min = 50.dp)) {
-                Icon(Icons.Outlined.Science, null, Modifier.size(20.dp)); Spacer(Modifier.width(9.dp)); Text("Open Compatibility Lab")
+        Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+            Eyebrow("Quick actions")
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilledTonalButton(onClick = onInbox, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Icon(Icons.Outlined.ChatBubbleOutline, null, Modifier.size(19.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Review inbox")
+                }
+                OutlinedButton(onClick = onLab, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Icon(Icons.Outlined.Science, null, Modifier.size(19.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Check compatibility")
+                }
+                TextButton(onClick = onAi, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text("Reply style")
+                    Spacer(Modifier.width(5.dp))
+                    Icon(Icons.Outlined.ArrowForward, null, Modifier.size(17.dp))
+                }
             }
         }
         state.messages.firstOrNull()?.let { latest ->
@@ -100,9 +114,22 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
 
 @Composable
 private fun Metric(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        Text(value, style = MaterialTheme.typography.headlineMedium)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(19.dp)
+    Column(
+        modifier
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(
+                colors.surface.copy(alpha = .87f),
+                colors.primaryContainer.copy(alpha = .57f),
+                colors.secondaryContainer.copy(alpha = .55f)
+            )))
+            .border(1.dp, colors.primary.copy(alpha = .14f), shape)
+            .padding(horizontal = 17.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(value, style = MaterialTheme.typography.headlineMedium, color = colors.primary)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
     }
 }
 
@@ -256,54 +283,46 @@ internal fun ReceiptDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
 
 @Composable
 internal fun PriorityScreen(state: VeilUiState, viewModel: VeilViewModel) {
-    var adding by rememberSaveable { mutableStateOf(false) }
+    var adding by remember { mutableStateOf<MessagingApp?>(null) }
     var removing by remember { mutableStateOf<PriorityContact?>(null) }
     var editing by remember { mutableStateOf<PriorityContact?>(null) }
     var binding by remember { mutableStateOf<PriorityContact?>(null) }
     ScreenBody {
-        PageHeading("Your people, chosen by you.", "Explicit contact rules, with a separate opt-in for automatic replies.")
-        Button(onClick = { adding = true }, modifier = Modifier.heightIn(min = 50.dp)) { Icon(Icons.Outlined.Add, null, Modifier.size(20.dp)); Spacer(Modifier.width(8.dp)); Text("Add priority contact") }
-        if (state.contacts.isEmpty()) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Eyebrow("A deliberate circle")
-                Text("Frequency never makes someone a priority.", style = MaterialTheme.typography.titleLarge)
-                Text("You decide who belongs here. A saved name is a local label, not a verified account identity or permission to send messages.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+        PageHeading("Priority people", "Choose who VEIL can reply to. Automatic replies start off.")
+        if (!state.system.notificationAccess) {
+            Text("Notification access is off. You can save people now, then verify them after setup.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val wide = maxWidth >= 840.dp && LocalDensity.current.fontScale < 1.5f
+            val whatsapp: @Composable () -> Unit = {
+                PriorityPlatformSection(MessagingApp.WHATSAPP,
+                    state.contacts.filter { it.app == MessagingApp.WHATSAPP },
+                    state.preferences.automationEnabled, onAdd = { adding = MessagingApp.WHATSAPP },
+                    onEdit = { editing = it }, onBind = { binding = it }, onRemove = { removing = it },
+                    onPause = { c, paused -> viewModel.saveContact(c.copy(paused = paused)) })
+            }
+            val instagram: @Composable () -> Unit = {
+                PriorityPlatformSection(MessagingApp.INSTAGRAM,
+                    state.contacts.filter { it.app == MessagingApp.INSTAGRAM },
+                    state.preferences.automationEnabled, onAdd = { adding = MessagingApp.INSTAGRAM },
+                    onEdit = { editing = it }, onBind = { binding = it }, onRemove = { removing = it },
+                    onPause = { c, paused -> viewModel.saveContact(c.copy(paused = paused)) })
+            }
+            if (wide) {
+                Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Column(Modifier.weight(1f)) { whatsapp() }
+                    Column(Modifier.weight(1f)) { instagram() }
+                }
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                    whatsapp()
+                    instagram()
+                }
             }
         }
-        state.contacts.forEach { contact ->
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(15.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(48.dp).background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = .5f), CircleShape), contentAlignment = Alignment.Center) {
-                        Text(contact.label.take(1).uppercase(), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(contact.label, style = MaterialTheme.typography.titleMedium)
-                        Text("${contact.app.label} · ${contact.sender}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { removing = contact }) { Icon(Icons.Outlined.DeleteOutline, "Remove ${contact.label}") }
-                }
-                StatusPill(when {
-                    contact.paused -> "Contact paused"
-                    contact.autoEnabled && state.preferences.automationEnabled -> "Automatic rule enabled"
-                    contact.autoEnabled -> "Rule enabled · global automation off"
-                    else -> "Automatic replies off"
-                })
-                Text(when {
-                    contact.identityKey == null -> "No stable notification identity bound. A visible name alone cannot authorize automation."
-                    !contact.compatibilityVerified -> "Identity bound; complete a reply test and record recipient confirmation before automation."
-                    else -> "Bound notification identity · compatibility receipt reported by you"
-                }, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { editing = contact }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Contact rules") }
-                    TextButton(onClick = { binding = contact }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Bind notification") }
-                }
-                InfoRow(Icons.Outlined.PauseCircleOutline, "Pause this contact", "Blocks this contact's automatic replies.",
-                    trailing = { Switch(contact.paused, { viewModel.saveContact(contact.copy(paused = it)) },
-                        modifier = Modifier.semantics { contentDescription = "Pause ${contact.label}" }) })
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = .5f))
-            }
-        }
-        InfoRow(Icons.Outlined.Info, "Names can be ambiguous", "Two accounts may use the same notification name. Automation requires stable exposed identity metadata, a test confirmed by you, and your explicit rule; unavailable metadata means suggestions only.")
+        Text("Names, phone numbers and Instagram IDs help you recognize people. VEIL can only auto-reply after you bind the actual notification identity and confirm a test. Unsupported replies stay manual.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
     editing?.let { contact -> ContactRuleDialog(contact, onDismiss = { editing = null }, onSave = {
         editing = null; viewModel.saveContact(it)
@@ -311,28 +330,164 @@ internal fun PriorityScreen(state: VeilUiState, viewModel: VeilViewModel) {
     binding?.let { contact -> ContactBindingDialog(contact, state.messages, onDismiss = { binding = null }, onBind = { message ->
         binding = null; viewModel.bindContact(contact.id, message.observation.id)
     }) }
-    if (adding) AddContactDialog(onDismiss = { adding = false }) { label, app, sender -> viewModel.addContact(label, app, sender); adding = false }
-    removing?.let { contact -> AlertDialog(onDismissRequest = { removing = null }, title = { Text("Remove ${contact.label}?") },
-        text = { Text("This deletes the local priority label. It does not change the contact in ${contact.app.label}.") },
-        confirmButton = { TextButton(onClick = { viewModel.removeContact(contact.id); removing = null }) { Text("Remove") } },
-        dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } }) }
+    adding?.let { app ->
+        AddContactDialog(app, onDismiss = { adding = null }) { label, platform, sender, username, userId, number ->
+            viewModel.addContact(label, platform, sender, username, userId, number)
+            adding = null
+        }
+    }
+    removing?.let { contact ->
+        AlertDialog(onDismissRequest = { removing = null }, title = { Text("Remove ${contact.label}?") },
+            text = { Text("This removes the local VEIL rule. It does not remove anyone from ${contact.app.label}.") },
+            confirmButton = { TextButton(onClick = { viewModel.removeContact(contact.id); removing = null }) { Text("Remove") } },
+            dismissButton = { TextButton(onClick = { removing = null }) { Text("Cancel") } })
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-internal fun AddContactDialog(onDismiss: () -> Unit, onAdd: (String, MessagingApp, String) -> Unit) {
-    var label by rememberSaveable { mutableStateOf("") }
-    var sender by rememberSaveable { mutableStateOf("") }
-    var app by rememberSaveable { mutableStateOf(MessagingApp.WHATSAPP) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("A place for your people") },
-        text = { Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(label, { if (it.length <= 80) label = it }, label = { Text("Local contact label") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { MessagingApp.entries.forEach { item -> FilterChip(selected = item == app, onClick = { app = item }, label = { Text(item.label) }) } }
-            OutlinedTextField(sender, { if (it.length <= 120) sender = it }, label = { Text("Exact notification sender") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-            Text("Use the exact name visible in Inbox. This saves a label only; it never enables automatic replies.", style = MaterialTheme.typography.bodySmall)
-        } },
-        confirmButton = { TextButton(onClick = { onAdd(label.trim(), app, sender.trim()) }, enabled = label.isNotBlank() && sender.isNotBlank()) { Text("Save contact") } },
-        dismissButton = { TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text("Cancel") } })
+private fun PriorityPlatformSection(
+    app: MessagingApp,
+    contacts: List<PriorityContact>,
+    globalAutomation: Boolean,
+    onAdd: () -> Unit,
+    onEdit: (PriorityContact) -> Unit,
+    onBind: (PriorityContact) -> Unit,
+    onRemove: (PriorityContact) -> Unit,
+    onPause: (PriorityContact, Boolean) -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Icon(if (app == MessagingApp.WHATSAPP) Icons.Outlined.ChatBubbleOutline else Icons.Outlined.AlternateEmail,
+                contentDescription = null, tint = colors.primary, modifier = Modifier.size(23.dp))
+            Column(Modifier.weight(1f)) {
+                Text(app.label, style = MaterialTheme.typography.titleLarge)
+                Text("${contacts.size} saved · ${if (app == MessagingApp.WHATSAPP) "Saved names and phone numbers" else "Usernames and account IDs"}",
+                    style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+            OutlinedButton(onClick = onAdd, modifier = Modifier.heightIn(min = 48.dp).semantics { contentDescription = "Add ${app.label} person" }) {
+                Icon(Icons.Outlined.Add, null, Modifier.size(18.dp))
+                Spacer(Modifier.width(5.dp))
+                Text("Add")
+            }
+        }
+        if (contacts.isEmpty()) {
+            OutlinedCard(Modifier.fillMaxWidth()) {
+                Text(if (app == MessagingApp.WHATSAPP) "No WhatsApp people yet." else "No Instagram people yet.",
+                    modifier = Modifier.padding(20.dp), style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant)
+            }
+        }
+        contacts.forEach { contact ->
+            OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent)) {
+                Column(Modifier.fillMaxWidth()
+                    .background(Brush.linearGradient(listOf(
+                        colors.surface.copy(alpha = .89f),
+                        colors.primaryContainer.copy(alpha = .42f),
+                        colors.secondaryContainer.copy(alpha = .37f))))
+                    .padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(Modifier.size(42.dp).background(colors.primaryContainer.copy(alpha = .5f), CircleShape),
+                            contentAlignment = Alignment.Center) {
+                            Text(contact.label.take(1).uppercase(), style = MaterialTheme.typography.titleMedium,
+                                color = colors.primary)
+                        }
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                            Text(contact.label, style = MaterialTheme.typography.titleMedium)
+                            val detail = if (app == MessagingApp.WHATSAPP) {
+                                contact.whatsappPhone.ifBlank { "Number not added" }
+                            } else {
+                                "@${contact.instagramUsername.ifBlank { contact.sender }}${contact.instagramUserId.takeIf { it.isNotBlank() }?.let { " · ID ${it.takeLast(4).padStart(it.length, '•')}" } ?: ""}"
+                            }
+                            Text(detail, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant,
+                                maxLines = 2)
+                        }
+                        IconButton(onClick = { onRemove(contact) }) {
+                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Remove ${contact.label}")
+                        }
+                    }
+                    val ready = contact.identityKey != null && contact.compatibilityVerified
+                    val active = ready && contact.autoEnabled && globalAutomation && !contact.paused
+                    Text(when {
+                        contact.paused -> "Paused"
+                        active -> "Auto-reply enabled"
+                        !ready -> "Suggestions only · identity not verified"
+                        contact.autoEnabled -> "Rule ready · global automation off"
+                        else -> "Auto-reply off"
+                    }, color = if (active) colors.primary else colors.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        TextButton(onClick = { onEdit(contact) }, modifier = Modifier.heightIn(min = 48.dp)) { Text("Edit") }
+                        TextButton(onClick = { onBind(contact) }, modifier = Modifier.heightIn(min = 48.dp)) {
+                            Text(if (ready) "Recheck identity" else "Verify identity")
+                        }
+                        Row(verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                            Text("Pause", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                            Switch(contact.paused, { onPause(contact, it) },
+                                modifier = Modifier.semantics { contentDescription = "Pause ${contact.label}" })
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun AddContactDialog(
+    app: MessagingApp,
+    onDismiss: () -> Unit,
+    onAdd: (String, MessagingApp, String, String, String, String) -> Unit,
+) {
+    var name by rememberSaveable(app) { mutableStateOf("") }
+    var notificationSender by rememberSaveable(app) { mutableStateOf("") }
+    var username by rememberSaveable(app) { mutableStateOf("") }
+    var userId by rememberSaveable(app) { mutableStateOf("") }
+    var phone by rememberSaveable(app) { mutableStateOf("") }
+    val hints = dev.veil.app.data.ContactReferenceHints.sanitize(app, username, userId, phone)
+    val effectiveSender = notificationSender.trim().ifBlank { name.trim() }
+    val valid = name.isNotBlank() && name.length <= 80 && effectiveSender.isNotBlank() &&
+        hints != null && (app != MessagingApp.INSTAGRAM || hints.instagramUsername.isNotBlank())
+    AlertDialog(onDismissRequest = onDismiss,
+        title = { Text(if (app == MessagingApp.WHATSAPP) "Add WhatsApp person" else "Add Instagram person") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(name, { name = it.take(80) },
+                    label = { Text(if (app == MessagingApp.WHATSAPP) "Name saved on device" else "Person's display name") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth())
+                if (app == MessagingApp.WHATSAPP) {
+                    OutlinedTextField(phone, { phone = it.take(22) },
+                        label = { Text("WhatsApp phone number (optional)") },
+                        supportingText = { Text("Include country code, e.g. +91. Only a reference, not verified by Android.") },
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                        modifier = Modifier.fillMaxWidth(), isError = hints == null)
+                } else {
+                    OutlinedTextField(username, { username = it.removePrefix("@").take(30) },
+                        label = { Text("Instagram username") }, prefix = { Text("@") },
+                        singleLine = true, modifier = Modifier.fillMaxWidth(), isError = hints == null)
+                    OutlinedTextField(userId, { userId = it.take(32) },
+                        label = { Text("Numeric Instagram user ID (optional)") },
+                        supportingText = { Text("Saved for your reference. Instagram notifications usually do not expose this ID.") },
+                        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(), isError = hints == null)
+                }
+                OutlinedTextField(notificationSender, { notificationSender = it.take(160) },
+                    label = { Text("Notification sender (if different)") },
+                    supportingText = { Text("Use the exact sender shown in VEIL Inbox. Leave blank if it matches the name above.") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth())
+                Text("Auto-reply stays off until you verify this exact conversation.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+            }
+        },
+        confirmButton = { TextButton(enabled = valid, onClick = {
+            onAdd(name.trim(), app, effectiveSender, hints!!.instagramUsername, hints.instagramUserId, hints.whatsappPhone)
+        }) { Text("Save person") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
 @Composable

@@ -22,7 +22,7 @@ class AppGraph(application: Application) {
     val preferences = PreferencesRepository(application)
     val secrets = ApiKeyStore(application)
     val database = Room.databaseBuilder(application, VeilDatabase::class.java, "veil.db")
-        .addMigrations(VeilDatabase.MIGRATION_1_2).build()
+        .addMigrations(VeilDatabase.MIGRATION_1_2, VeilDatabase.MIGRATION_2_3).build()
     val repository = VeilRepository(database, SecretBox(), platform::dispatchTest, platform::forget, platform::clear,
         replyDispatch = { id,text,automatic -> platform.dispatchReply(id,text,automatic) })
     val readyPreferences = MutableStateFlow<VeilPreferences?>(null)

@@ -12,7 +12,7 @@ No supported action means no automatic platform integration is invented. Copy a 
 
 ## Glass, colors, and Mote
 
-Light, dark, and system themes combine with five accents: Rose, Coral, Plum, Amber, and Silver. Glass intensity changes the visual treatment. The floating capsule dock adapts to a navigation rail in sufficiently wide windows. Layouts account for system insets, split-screen sizing, and large text.
+Light, dark, and system themes combine with eight warm palettes: Sunset, Blossom, Champagne, Rose, Coral, Burgundy, Amber, and Linen. New installs default to Sunset while saved legacy selections are retained. Glass intensity changes the visual treatment. The floating capsule dock adapts to a navigation rail in sufficiently wide windows. Layouts account for system insets, split-screen sizing, and large text.
 
 Glass is a supported-effects approximation: layered translucency, restrained light, edges, and decorative blur where supported. It does not claim operating-system backdrop sampling or allow decorative effects to replace readable surfaces.
 
@@ -27,6 +27,14 @@ The optional OpenAI Responses engine needs your own encrypted API key and explic
 Writing preferences cover language, warmth, humor, emoji use, length, preferred/avoided phrases, and examples you explicitly supply. Preview uses the selected supported engine, and unknown facts are not treated as permission to invent an answer. No secret conversation scraping or complete-personality learning is implied. Provider failures can yield an offline fallback that still requires review.
 
 Context is limited to at most six selected partial notification-derived turns for the same exposed stable identity, only when enabled. A notification listener does not provide full conversation history or reliable knowledge of everything sent on other devices.
+
+## WhatsApp and Instagram contact details (v1.1)
+
+Priority now keeps the two platforms visually separate. The WhatsApp form accepts the tablet's saved contact name, optional phone number with country code, and the exact name shown in notifications if different. The Instagram form accepts a display name, username, optional numeric user ID, and notification sender override.
+
+These user-typed account details are encrypted **reference hints**, not proof of account identity. NotificationListenerService may never see phone numbers or numeric Instagram IDs. VEIL does not look them up or match them by guessing. After the user selects a retained notification from the person, the repository checks that its sender matches the saved notification name, that the notification carries stable app-provided identity metadata, and that a separately reported recipient receipt confirms the controlled test. The actual bound notification identity is what the safe automation pipeline compares.
+
+Changing sender name, username, numeric ID, phone number, or platform disables any previously approved automatic rule and clears identity binding. The per-contact pause remains available. Advanced cooldown and quiet-hours rules are tucked away by default. Instagram replies cannot be promised without an actual compatible `RemoteInput` action from the installed Instagram version.
 
 ## Enabling restricted automation
 

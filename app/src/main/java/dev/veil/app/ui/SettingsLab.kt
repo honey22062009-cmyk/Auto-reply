@@ -2,6 +2,11 @@ package dev.veil.app.ui
 
 import android.os.Build
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -36,6 +41,27 @@ internal fun SettingsScreen(state: VeilUiState, viewModel: VeilViewModel, onLab:
             }
             Text("Accent color", style = MaterialTheme.typography.titleSmall)
             AccentSelector(preferences.accent, viewModel::setAccent)
+            // Real-time preview follows the selected palette in both system appearance modes.
+            val previewShape = RoundedCornerShape(20.dp)
+            val colors = MaterialTheme.colorScheme
+            Row(Modifier.fillMaxWidth().heightIn(min = 86.dp)
+                .clip(previewShape)
+                .background(Brush.linearGradient(listOf(
+                    colors.primaryContainer, colors.secondaryContainer, colors.tertiaryContainer)))
+                .border(1.dp, colors.primary.copy(alpha = .18f), previewShape)
+                .padding(17.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                Icon(Icons.Outlined.Palette, null, Modifier.size(29.dp), tint = colors.primary)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text("${accentLabel(preferences.accent)} glow", style = MaterialTheme.typography.titleMedium,
+                        color = colors.onPrimaryContainer)
+                    Text("Warm tones · readable glass · calm contrast",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.onPrimaryContainer)
+                }
+                Icon(Icons.Outlined.CheckCircleOutline, null, tint = colors.secondary)
+            }
             InfoRow(Icons.Outlined.MotionPhotosOff, "Reduce motion", "Quiet transitions and immediate dock selection.",
                 trailing = { Switch(preferences.reduceMotion, viewModel::setReduceMotion,
                     modifier = Modifier.semantics { contentDescription = "Reduce motion" }) })

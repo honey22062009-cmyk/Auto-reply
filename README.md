@@ -2,11 +2,23 @@
 
 A standalone Android messaging companion built with Kotlin, Jetpack Compose, Room, and supported Android notification APIs. Application ID: `dev.veil.app`. VEIL is independent of Strict Blocker.
 
+## Version 1.2: warm editorial visual refresh
+
+The updated Compose theme avoids generic neon purple/blue AI gradients and offers **Sunset** (coral/peach), **Blossom** (rose/blush), and **Champagne** (cream/gold) color palettes, with carefully matched ivory and espresso surfaces for light/dark mode, static decorative glows, more readable glass cards, soft gradient dock selection, clean dashboard metrics, and a live preview in Settings. New installations default to Sunset; existing users retain their saved choice. Legacy color settings migrate safely, with the old Plum name shown as a warmer Burgundy treatment. The design is an efficient layered-glass approximation, not system-level backdrop sampling. These visual updates add no AI provider, tracking, or network activity.
+
+## Version 1.1: separate platform people
+
+The **Priority** screen now has separate WhatsApp and Instagram sections, each with its own Add action and concise person cards. For WhatsApp you can save the name used on your tablet, an optional country-code phone number, and a different notification sender when needed. For Instagram you can save a display name, username, optional numeric user ID, and an exact notification sender if different. Optional fields are local, encrypted references; VEIL never queries private platform APIs to verify them.
+
+**Important:** Android notifications do not promise a WhatsApp phone number, an Instagram username, or an Instagram numeric user ID. Saving these hints does **not** prove recipient identity or make auto-sending possible. VEIL still requires the app-exposed stable notification identity, a consented fixed test with receipt reported by the owner, and opt-in both per person and globally. Editing any identity hints disables automatic replies and requires a fresh notification binding. Users can edit conservative reply limits under **Advanced rules** without cluttering the default person view.
+
+Existing data is migrated with Room v2→v3, retaining saved contacts, settings, history, and the duplicate-prevention ledger. This update uses versionCode 101; update installs require the same Android signing key as the installed VEIL build.
+
 ## Version 1
 
 VEIL reads accessible notifications from the official WhatsApp and Instagram Android apps that you explicitly enable. It offers local reply templates, optional OpenAI drafts, manual review and editing, a compatibility lab, and deliberately restricted contact automation. This is a notification-derived view, not a replacement for either app's complete inbox.
 
-The interface includes a floating glass-style navigation dock, tablet layouts, light/dark/system appearance, Rose/Coral/Plum/Amber/Silver accents, glass intensity, reduced motion, and **Mote**, an optional interactive companion that guides you to useful app screens. Mote is deterministic guidance, not an AI chatbot. Glass rendering uses supported effects and layered translucency; it does not claim native system-level backdrop sampling.
+The interface includes a floating glass-style navigation dock, tablet layouts, light/dark/system appearance, Sunset, Blossom, Champagne, Rose, Coral, Burgundy, Amber, and Linen palettes, glass intensity, reduced motion, and **Mote**, an optional interactive companion that guides you to useful app screens. Mote is deterministic guidance, not an AI chatbot. Glass rendering uses supported effects and layered translucency; it does not claim native system-level backdrop sampling.
 
 ### Sending stays under your control
 

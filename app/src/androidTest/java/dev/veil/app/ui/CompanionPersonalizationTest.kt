@@ -24,7 +24,7 @@ class CompanionPersonalizationTest {
 
     @Test fun companionOpensLocalGuidanceAndNavigatesToAnActualDestination() {
         var route: String? = null
-        compose.setContent { VeilTheme { CompanionDock(VeilUiState(), { route = it }, {}) } }
+        compose.setContent { VeilTheme { CompanionDock(VeilUiState(preferences = VeilPreferences(companionEnabled = true)), { route = it }, {}) } }
         compose.onNodeWithContentDescription("Mote, your VEIL guide").assertHeightIsAtLeast(48.dp).performClick()
         compose.onNodeWithText("A little guidance from Mote").assertIsDisplayed()
         compose.onNodeWithText("Open Compatibility Lab").performScrollTo().performClick()

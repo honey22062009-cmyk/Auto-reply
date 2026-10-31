@@ -143,14 +143,20 @@ class VeilRepository(
         database.withTransaction { dao.deleteMessages(); dao.deleteEvents() }
     }
 
-    suspend fun addContact(label: String, app: MessagingApp, sender: String): String = mutex.withLock {
+    suspend fun addContact(label: String, app: MessagingApp, sender: String,
+        instagramUsername: String = "", instagramUserId: String = "", whatsappPhone: String = ""): String = mutex.withLock {
         val cleanLabel = label.trim(); val cleanSender = sender.trim()
         if (cleanLabel.isBlank() || cleanSender.isBlank()) return@withLock "Enter a local label and an exact visible sender name."
         if (cleanLabel.length > 80 || cleanSender.length > 160) return@withLock "Use a shorter label or sender name."
+        val hints = ContactReferenceHints.sanitize(app, instagramUsername, instagramUserId, whatsappPhone)
+            ?: return@withLock "Check the username, numeric user ID, or phone number format."
         if (dao.contacts().any { it.app == app.name && cipher.decrypt(it.sender).equals(cleanSender, ignoreCase = true) })
             return@withLock "That sender name is already saved for this platform. Names are not verified identities."
         dao.insertContact(ContactEntity(UUID.randomUUID().toString(), cipher.encrypt(cleanLabel)!!,
-            app.name, cipher.encrypt(cleanSender)!!, now()))
+            app.name, cipher.encrypt(cleanSender)!!, now(),
+            instagramUsername = hints.instagramUsername.takeIf { it.isNotEmpty() }?.let { cipher.encrypt(it) },
+            instagramUserId = hints.instagramUserId.takeIf { it.isNotEmpty() }?.let { cipher.encrypt(it) },
+            whatsappPhone = hints.whatsappPhone.takeIf { it.isNotEmpty() }?.let { cipher.encrypt(it) }))
         "Contact saved locally. Automatic replies remain off."
     }
 
@@ -202,7 +208,12 @@ class VeilRepository(
     suspend fun bindContact(contactId: String, messageId: String): String = mutex.withLock {
         val contact = dao.findContact(contactId) ?: return@withLock "Contact not found."
         val row = dao.find(messageId) ?: return@withLock "Notification is no longer retained."
-        if (row.app != contact.app || row.isGroup || row.identityKey == null || row.sender == null) return@withLock "This notification has no supported one-to-one identity anchor for that platform. Name-only automation stays off."
+        if (row.app != contact.app || row.isGroup || row.identityKey == null || row.sender == null)
+            return@withLock "This notification has no supported one-to-one identity anchor for that platform. Name-only automation stays off."
+        val expectedSender = cipher.decrypt(contact.sender)?.trim()
+        val actualSender = cipher.decrypt(row.sender)?.trim()
+        if (expectedSender.isNullOrBlank() || !expectedSender.equals(actualSender, ignoreCase = true))
+            return@withLock "The notification sender does not match the saved name. Review the contact before binding."
         if (dao.contacts().any { it.id != contact.id && it.identityKey == row.identityKey }) return@withLock "That identity is already bound to another contact. Resolve the ambiguity first."
         val verified = row.dispatchKind == "TEST" && row.acceptedAt != null && row.receiptReportedAt != null
         dao.updateContact(contact.copy(identityKey = row.identityKey, sender = row.sender,
@@ -215,7 +226,13 @@ class VeilRepository(
         require(value.label.isNotBlank() && value.label.length <=80 && value.sender.isNotBlank() && value.sender.length<=160)
         require(value.cooldownSeconds in 0..86400 && value.maxPerHour in 1..100 && value.maxPerDay in 1..1000 && value.maxPerConversation in 1..100)
         require(value.quietStartHour in 0..23 && value.quietEndHour in 0..23 && value.instruction.length<=1000)
-        val changedIdentity = value.sender.trim() != cipher.decrypt(old.sender) || value.app.name != old.app
+        val hints = ContactReferenceHints.sanitize(value.app, value.instagramUsername,
+            value.instagramUserId, value.whatsappPhone)
+            ?: return@withLock "Check the username, numeric user ID, or phone number format."
+        val changedIdentity = value.sender.trim() != cipher.decrypt(old.sender) || value.app.name != old.app ||
+            hints.instagramUsername != cipher.decrypt(old.instagramUsername).orEmpty() ||
+            hints.instagramUserId != cipher.decrypt(old.instagramUserId).orEmpty() ||
+            hints.whatsappPhone != cipher.decrypt(old.whatsappPhone).orEmpty()
         if (value.autoEnabled && (changedIdentity || old.identityKey == null || !old.compatibilityVerified))
             return@withLock "Bind a stable identity with a completed, user-reported compatibility test before enabling automatic replies."
         dao.updateContact(old.copy(label = cipher.encrypt(value.label.trim())!!,sender = cipher.encrypt(value.sender.trim())!!,
@@ -224,7 +241,10 @@ class VeilRepository(
             autoEnabled = value.autoEnabled && !changedIdentity,paused = value.paused,
             cooldownSeconds = value.cooldownSeconds,maxPerHour=value.maxPerHour,maxPerDay=value.maxPerDay,
             maxPerConversation=value.maxPerConversation,quietEnabled=value.quietEnabled,
-            quietStartHour=value.quietStartHour,quietEndHour=value.quietEndHour,instruction=cipher.encrypt(value.instruction)))
+            quietStartHour=value.quietStartHour,quietEndHour=value.quietEndHour,instruction=cipher.encrypt(value.instruction),
+            instagramUsername = hints.instagramUsername.takeIf { it.isNotEmpty() }?.let { cipher.encrypt(it) },
+            instagramUserId = hints.instagramUserId.takeIf { it.isNotEmpty() }?.let { cipher.encrypt(it) },
+            whatsappPhone = hints.whatsappPhone.takeIf { it.isNotEmpty() }?.let { cipher.encrypt(it) }))
         event(value.app,if (value.autoEnabled) "Contact automation enabled" else "Contact rules updated",
             "Explicit contact settings saved. Global pause and all safety rules still apply.")
         "Contact settings saved."
@@ -327,7 +347,9 @@ class VeilRepository(
         cipher.decrypt(row.label) ?: "Unavailable encrypted label", MessagingApp.valueOf(row.app),
         cipher.decrypt(row.sender) ?: "",row.identityKey,row.autoEnabled,row.paused,row.cooldownSeconds,
         row.maxPerHour,row.maxPerDay,row.maxPerConversation,row.quietStartHour,row.quietEndHour,row.quietEnabled,
-        cipher.decrypt(row.instruction).orEmpty(),row.compatibilityVerified)
+        cipher.decrypt(row.instruction).orEmpty(),row.compatibilityVerified,
+        cipher.decrypt(row.instagramUsername).orEmpty(),cipher.decrypt(row.instagramUserId).orEmpty(),
+        cipher.decrypt(row.whatsappPhone).orEmpty())
     private fun decode(row: MessageEntity) = MessageRecord(
         ObservedNotification(row.id, row.keyHash, MessagingApp.valueOf(row.app), cipher.decrypt(row.sender),
             cipher.decrypt(row.preview), row.postedAt, row.messageAt, row.messagingStyle, row.isGroup,

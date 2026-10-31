@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
@@ -42,39 +43,72 @@ import dev.veil.app.domain.Appearance
 import dev.veil.app.domain.AccentPalette
 
 private val LightColors = lightColorScheme(
-    primary = Color(0xFF885563), onPrimary = Color.White,
-    primaryContainer = Color(0xFFF2DDE3), onPrimaryContainer = Color(0xFF4C3039),
-    secondary = Color(0xFF70626E), secondaryContainer = Color(0xFFECE4E9),
-    background = Color(0xFFF7F4F1), onBackground = Color(0xFF29262B),
-    surface = Color(0xFFFDFBF9), onSurface = Color(0xFF29262B),
-    surfaceVariant = Color(0xFFEEE8E7), onSurfaceVariant = Color(0xFF665E63),
-    outline = Color(0xFF897B81), outlineVariant = Color(0xFFDDD2D4),
-    error = Color(0xFFA23845), errorContainer = Color(0xFFFFDADC),
+    primary = Color(0xFFA23F39), onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFE0D9), onPrimaryContainer = Color(0xFF652B29),
+    secondary = Color(0xFF915435), onSecondary = Color.White,
+    secondaryContainer = Color(0xFFFFE9D4), onSecondaryContainer = Color(0xFF5A361F),
+    tertiary = Color(0xFF956A35), onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFEBC6), onTertiaryContainer = Color(0xFF573B1F),
+    background = Color(0xFFFFF9F5), onBackground = Color(0xFF302A29),
+    surface = Color(0xFFFFFEFC), onSurface = Color(0xFF302A29),
+    surfaceVariant = Color(0xFFF6EBE4), onSurfaceVariant = Color(0xFF675A55),
+    outline = Color(0xFF88746C), outlineVariant = Color(0xFFE2D0C6),
+    error = Color(0xFFA63340), errorContainer = Color(0xFFFFDDE1),
 )
 
 private val DarkColors = darkColorScheme(
-    primary = Color(0xFFDFB0BE), onPrimary = Color(0xFF452D36),
-    primaryContainer = Color(0xFF533843), onPrimaryContainer = Color(0xFFF7DCE6),
-    secondary = Color(0xFFCCBEC9), secondaryContainer = Color(0xFF423A44),
-    background = Color(0xFF171619), onBackground = Color(0xFFF0E9EC),
-    surface = Color(0xFF232126), onSurface = Color(0xFFF0E9EC),
-    surfaceVariant = Color(0xFF302C32), onSurfaceVariant = Color(0xFFC5BAC1),
-    outline = Color(0xFF9C8E98), outlineVariant = Color(0xFF494149),
-    error = Color(0xFFFFB2BC), errorContainer = Color(0xFF5D2933),
+    primary = Color(0xFFFFB7AA), onPrimary = Color(0xFF552820),
+    primaryContainer = Color(0xFF69372F), onPrimaryContainer = Color(0xFFFFE3DA),
+    secondary = Color(0xFFF2C29D), onSecondary = Color(0xFF4A2E1D),
+    secondaryContainer = Color(0xFF5A3D2B), onSecondaryContainer = Color(0xFFFFE7D3),
+    tertiary = Color(0xFFE8C795), onTertiary = Color(0xFF4D341E),
+    tertiaryContainer = Color(0xFF59442C), onTertiaryContainer = Color(0xFFFFECCB),
+    background = Color(0xFF1F1A1B), onBackground = Color(0xFFFFF1EA),
+    surface = Color(0xFF2B2323), onSurface = Color(0xFFFFF1EA),
+    surfaceVariant = Color(0xFF3D3030), onSurfaceVariant = Color(0xFFDFC9BE),
+    outline = Color(0xFFC2A89B), outlineVariant = Color(0xFF5A4541),
+    error = Color(0xFFFFB3BF), errorContainer = Color(0xFF682A36),
 )
 
-/** Palette text pairs are checked against WCAG AA; surfaces stay neutral for readability. */
+/** Warm, editorial color systems. Avoid the conventional neon purple/blue AI aesthetic. */
 internal fun veilColorScheme(dark: Boolean, palette: AccentPalette): ColorScheme {
     val tones = when (palette) {
-        AccentPalette.ROSE -> if (dark) listOf(0xFFDFB0BE, 0xFF452D36, 0xFF533843, 0xFFF7DCE6) else listOf(0xFF885563, 0xFFFFFFFF, 0xFFF2DDE3, 0xFF4C3039)
-        AccentPalette.CORAL -> if (dark) listOf(0xFFE9B49F, 0xFF4B2D24, 0xFF623F33, 0xFFFFE1D5) else listOf(0xFF98523F, 0xFFFFFFFF, 0xFFF9E0D6, 0xFF603527)
-        AccentPalette.PLUM -> if (dark) listOf(0xFFD1B6CC, 0xFF412E3E, 0xFF513D4F, 0xFFEFDDEB) else listOf(0xFF73566F, 0xFFFFFFFF, 0xFFECDDEB, 0xFF493246)
-        AccentPalette.AMBER -> if (dark) listOf(0xFFDBC39C, 0xFF3E301C, 0xFF55452E, 0xFFEFE2C8) else listOf(0xFF785C32, 0xFFFFFFFF, 0xFFF1E3C9, 0xFF4F3B20)
-        AccentPalette.SILVER -> if (dark) listOf(0xFFCBC5D2, 0xFF333039, 0xFF49454F, 0xFFE8E1EC) else listOf(0xFF62616A, 0xFFFFFFFF, 0xFFE5E2EB, 0xFF393842)
+        AccentPalette.ROSE -> if (dark) listOf(0xFFFFB4BF, 0xFF55282F, 0xFF67333C, 0xFFFFE3E8)
+            else listOf(0xFFA13E57, 0xFFFFFFFF, 0xFFFFDEE5, 0xFF692839)
+        AccentPalette.CORAL -> if (dark) listOf(0xFFFFB39F, 0xFF54281F, 0xFF683B2F, 0xFFFFE4D9)
+            else listOf(0xFFA24A34, 0xFFFFFFFF, 0xFFFFE1D7, 0xFF6F3527)
+        // Preserve previously stored enum names without introducing purple-tinted UI.
+        AccentPalette.PLUM -> if (dark) listOf(0xFFFFBBC0, 0xFF57282F, 0xFF68343B, 0xFFFFE1E5)
+            else listOf(0xFF893B43, 0xFFFFFFFF, 0xFFFCE0E1, 0xFF622A32)
+        AccentPalette.AMBER -> if (dark) listOf(0xFFE8CA98, 0xFF46311C, 0xFF59442B, 0xFFFFECCB)
+            else listOf(0xFF7A542A, 0xFFFFFFFF, 0xFFFFEDCB, 0xFF543A1F)
+        AccentPalette.SILVER -> if (dark) listOf(0xFFD9C9BE, 0xFF40312B, 0xFF584841, 0xFFFFE9DB)
+            else listOf(0xFF69564C, 0xFFFFFFFF, 0xFFEFE5DF, 0xFF483A33)
+        AccentPalette.SUNSET -> if (dark) listOf(0xFFFFB7AA, 0xFF552820, 0xFF69372F, 0xFFFFE3DA)
+            else listOf(0xFFA23F39, 0xFFFFFFFF, 0xFFFFE0D9, 0xFF652B29)
+        AccentPalette.BLOSSOM -> if (dark) listOf(0xFFFFB7C6, 0xFF582932, 0xFF703744, 0xFFFFDFE7)
+            else listOf(0xFFA3415F, 0xFFFFFFFF, 0xFFFFDFE8, 0xFF69293E)
+        AccentPalette.CHAMPAGNE -> if (dark) listOf(0xFFE8CA98, 0xFF46311C, 0xFF59442B, 0xFFFFECCB)
+            else listOf(0xFF7A542A, 0xFFFFFFFF, 0xFFFFEDCB, 0xFF543A1F)
     }
-    return (if (dark) DarkColors else LightColors).copy(
+    val base = if (dark) DarkColors else LightColors
+    val second = when (palette) {
+        AccentPalette.BLOSSOM, AccentPalette.ROSE -> if (dark) Color(0xFFF4BFA0) else Color(0xFF935039)
+        AccentPalette.CHAMPAGNE, AccentPalette.AMBER -> if (dark) Color(0xFFFFC4A2) else Color(0xFF995638)
+        else -> base.secondary
+    }
+    val secondContainer = when (palette) {
+        AccentPalette.BLOSSOM, AccentPalette.ROSE -> if (dark) Color(0xFF5C3D32) else Color(0xFFFFE8D8)
+        AccentPalette.CHAMPAGNE, AccentPalette.AMBER -> if (dark) Color(0xFF5F3B2D) else Color(0xFFFFE1D5)
+        else -> base.secondaryContainer
+    }
+    return base.copy(
         primary = Color(tones[0]), onPrimary = Color(tones[1]),
         primaryContainer = Color(tones[2]), onPrimaryContainer = Color(tones[3]),
+        secondary = second, onSecondary = if (dark) Color(0xFF4A2E1D) else Color.White,
+        secondaryContainer = secondContainer,
+        onSecondaryContainer = if (dark) Color(0xFFFFE7D3) else Color(0xFF58341F),
+        tertiary = if (dark) Color(0xFFE8C795) else Color(0xFF956A35),
     )
 }
 
@@ -87,7 +121,7 @@ internal fun effectiveReducedMotion(preference: Boolean): Boolean {
 internal val LocalGlassIntensity = staticCompositionLocalOf { .65f }
 
 @Composable
-fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.ROSE, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
+fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.SUNSET, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
     val dark = when (appearance) {
         Appearance.DARK -> true
         Appearance.LIGHT -> false
@@ -106,7 +140,7 @@ fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette
     MaterialTheme(
         colorScheme = veilColorScheme(dark, palette),
         typography = Typography(
-            displaySmall = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Serif, fontSize = 38.sp, lineHeight = 44.sp),
+            displaySmall = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Default, fontSize = 38.sp, lineHeight = 44.sp),
             headlineLarge = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, lineHeight = 39.sp, fontWeight = FontWeight.Normal, letterSpacing = (-0.8).sp),
             headlineMedium = MaterialTheme.typography.headlineMedium.copy(fontSize = 27.sp, lineHeight = 34.sp, letterSpacing = (-0.5).sp),
             titleLarge = MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.Medium),
@@ -125,13 +159,17 @@ fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette
 internal fun VeilBackdrop(modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     Box(modifier.background(colors.background)) {
-        Canvas(Modifier.fillMaxSize().then(if (Build.VERSION.SDK_INT >= 31) Modifier.blur(54.dp) else Modifier)) {
-            drawCircle(Brush.radialGradient(listOf(colors.primary.copy(alpha = .12f), Color.Transparent),
-                center = Offset(size.width * .98f, size.height * .1f), radius = size.width * .7f),
-                radius = size.width * .7f, center = Offset(size.width * .98f, size.height * .1f))
-            drawCircle(Brush.radialGradient(listOf(colors.secondary.copy(alpha = .075f), Color.Transparent),
-                center = Offset(size.width * .1f, size.height * .9f), radius = size.width * .8f),
-                radius = size.width * .8f, center = Offset(size.width * .1f, size.height * .9f))
+        Canvas(Modifier.fillMaxSize().then(if (Build.VERSION.SDK_INT >= 31) Modifier.blur(46.dp) else Modifier)) {
+            val wide = size.width.coerceAtLeast(1f)
+            val glowA = Offset(size.width * .86f, size.height * .06f)
+            val glowB = Offset(size.width * .05f, size.height * .76f)
+            val glowC = Offset(size.width * .63f, size.height * .95f)
+            drawCircle(Brush.radialGradient(listOf(colors.primary.copy(alpha = .19f), Color.Transparent),
+                center = glowA, radius = wide * .76f), radius = wide * .76f, center = glowA)
+            drawCircle(Brush.radialGradient(listOf(colors.secondary.copy(alpha = .14f), Color.Transparent),
+                center = glowB, radius = wide * .82f), radius = wide * .82f, center = glowB)
+            drawCircle(Brush.radialGradient(listOf(colors.tertiary.copy(alpha = .08f), Color.Transparent),
+                center = glowC, radius = wide * .52f), radius = wide * .52f, center = glowC)
         }
     }
 }
@@ -140,13 +178,23 @@ internal fun VeilBackdrop(modifier: Modifier = Modifier) {
 internal fun GlassPanel(modifier: Modifier = Modifier, intensity: Float = LocalGlassIntensity.current, content: @Composable ColumnScope.() -> Unit) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(24.dp)
+    val dark = colors.background.luminance() < .4f
     Column(
-        modifier.shadow(10.dp, shape, ambientColor = colors.primary.copy(alpha = .07f), spotColor = colors.primary.copy(alpha = .08f))
+        modifier.shadow(12.dp, shape, ambientColor = colors.primary.copy(alpha = .12f), spotColor = colors.secondary.copy(alpha = .12f))
             .clip(shape)
-            .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .95f - intensity * .18f), colors.surface.copy(alpha = .92f))))
-            .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .34f), colors.outlineVariant.copy(alpha = .35f), Color.White.copy(alpha = .1f))), shape)
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp), content = content,
+            .background(Brush.linearGradient(listOf(
+                colors.surface.copy(alpha = .98f - intensity * .10f),
+                colors.primaryContainer.copy(alpha = if (dark) .28f else .46f),
+                colors.secondaryContainer.copy(alpha = if (dark) .27f else .41f),
+                colors.surface.copy(alpha = .97f - intensity * .08f)
+            )))
+            .border(1.dp, Brush.linearGradient(listOf(
+                Color.White.copy(alpha = if (dark) .20f else .92f),
+                colors.primary.copy(alpha = .24f), colors.secondary.copy(alpha = .22f),
+                Color.White.copy(alpha = if (dark) .09f else .48f)
+            )), shape)
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp), content = content,
     )
 }
 
@@ -162,32 +210,44 @@ internal enum class Destination(val route: String, val label: String, val icon: 
 internal fun FloatingDock(selectedRoute: String?, reducedMotion: Boolean, intensity: Float,
     onSelect: (Destination) -> Unit, modifier: Modifier = Modifier, rail: Boolean = false) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(36.dp)
+    val shape = RoundedCornerShape(if (rail) 32.dp else 36.dp)
     val fontScale = LocalDensity.current.fontScale
     val motionReduced = effectiveReducedMotion(reducedMotion)
     val defaultDockHeight = 51.dp + (15 * fontScale).dp
     val selectedIndex = Destination.entries.indexOfFirst { it.route == selectedRoute }.coerceAtLeast(0)
-    val surface = modifier.shadow(18.dp, shape, ambientColor = colors.primary.copy(alpha = .16f), spotColor = colors.primary.copy(alpha = .13f))
+    val dark = colors.background.luminance() < .4f
+    val surface = modifier.shadow(18.dp, shape, ambientColor = colors.primary.copy(alpha = .20f), spotColor = colors.secondary.copy(alpha = .17f))
         .clip(shape)
-        .background(Brush.linearGradient(listOf(colors.surface.copy(alpha = .96f - intensity * .21f), colors.surfaceVariant.copy(alpha = .90f))))
-        .border(1.dp, Brush.linearGradient(listOf(Color.White.copy(alpha = .60f), colors.outlineVariant.copy(alpha = .5f), Color.White.copy(alpha = .15f))), shape)
+        .background(Brush.linearGradient(listOf(
+            colors.surface.copy(alpha = .96f - intensity * .13f),
+            colors.primaryContainer.copy(alpha = if (dark) .26f else .48f),
+            colors.secondaryContainer.copy(alpha = if (dark) .25f else .47f),
+            colors.surface.copy(alpha = .97f - intensity * .10f)
+        )))
+        .border(1.dp, Brush.linearGradient(listOf(
+            Color.White.copy(alpha = if (dark) .29f else .96f),
+            colors.primary.copy(alpha = .29f), colors.secondary.copy(alpha = .31f)
+        )), shape)
     if (rail) {
         Column(surface.padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Destination.entries.forEach { item ->
                 DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.width(78.dp).heightIn(min = defaultDockHeight)
-                    .background(if (item.route == selectedRoute) colors.primaryContainer.copy(alpha = .75f) else Color.Transparent, RoundedCornerShape(27.dp)))
+                    .then(if (item.route == selectedRoute) Modifier.background(
+                        Brush.linearGradient(listOf(colors.primaryContainer, colors.secondaryContainer.copy(alpha = .82f))),
+                        RoundedCornerShape(27.dp)) else Modifier))
             }
         }
     } else {
         BoxWithConstraints(surface.padding(7.dp)) {
             val itemWidth = maxWidth / 5
-            val showLabels = maxWidth >= 400.dp || fontScale <= 1.3f
+            val showLabels = fontScale <= 1.4f
             val dockHeight = if (showLabels) defaultDockHeight else 62.dp
             val offset = animateDpAsState(itemWidth * selectedIndex, tween(if (motionReduced) 0 else 250), label = "dock highlight")
             if (Destination.entries.any { it.route == selectedRoute }) {
                 Box(Modifier.offset { IntOffset(offset.value.roundToPx(), 0) }.width(itemWidth).height(dockHeight).clip(RoundedCornerShape(29.dp))
-                    .background(Brush.verticalGradient(listOf(colors.primaryContainer.copy(alpha = .85f), colors.primaryContainer.copy(alpha = .45f))))
-                    .border(1.dp, Color.White.copy(alpha = .23f), RoundedCornerShape(29.dp)))
+                    .background(Brush.linearGradient(listOf(colors.primaryContainer.copy(alpha = .93f),
+                        colors.secondaryContainer.copy(alpha = .85f))))
+                    .border(1.dp, colors.primary.copy(alpha = .20f), RoundedCornerShape(29.dp)))
             }
             Row { Destination.entries.forEach { item -> DockItem(item, item.route == selectedRoute, { onSelect(item) }, Modifier.weight(1f).heightIn(min = dockHeight), showLabel = showLabels) } }
         }
@@ -215,7 +275,8 @@ internal fun Eyebrow(text: String, modifier: Modifier = Modifier) = Text(text.up
 internal fun PageHeading(title: String, subtitle: String, action: (@Composable () -> Unit)? = null) {
     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("V E I L", style = MaterialTheme.typography.labelLarge, letterSpacing = 3.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("V E I L", style = MaterialTheme.typography.labelLarge, letterSpacing = 3.sp,
+                color = MaterialTheme.colorScheme.primary)
             action?.invoke()
         }
         Spacer(Modifier.height(8.dp))

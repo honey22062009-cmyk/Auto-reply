@@ -112,20 +112,44 @@ class VeilUiTest {
         compose.runOnIdle { assertEquals(0, sends) }
     }
 
-    @Test fun contactCannotBeSavedUntilBothFieldsArePresent() {
-        var saved: Triple<String, MessagingApp, String>? = null
+    @Test fun instagramRequiresAUsernameAndPreservesOptionalNumericId() {
+        var saved: List<String>? = null
         compose.setContent {
-            VeilTheme { AddContactDialog(onDismiss = {}) { label, app, sender -> saved = Triple(label, app, sender) } }
+            VeilTheme {
+                AddContactDialog(MessagingApp.INSTAGRAM, onDismiss = {}) { label, app, sender, handle, id, phone ->
+                    saved = listOf(label, app.name, sender, handle, id, phone)
+                }
+            }
         }
-
-        compose.onNodeWithText("Save contact").assertIsNotEnabled()
-        compose.onNodeWithText("Local contact label").performTextInput("  Friend  ")
-        compose.onNodeWithText("Save contact").assertIsNotEnabled()
-        compose.onNodeWithText("Exact notification sender").performTextInput("  Sender name  ")
-        compose.onNodeWithText("Instagram").performClick()
-        compose.onNodeWithText("Save contact").assertIsEnabled().performClick()
-        compose.runOnIdle { assertEquals(Triple("Friend", MessagingApp.INSTAGRAM, "Sender name"), saved) }
+        compose.onNodeWithText("Save person").assertIsNotEnabled()
+        compose.onNodeWithText("Person's display name").performTextInput("Priyanshi")
+        compose.onNodeWithText("Save person").assertIsNotEnabled()
+        compose.onNodeWithText("Instagram username").performTextInput("@friend_01")
+        compose.onNodeWithText("Numeric Instagram user ID (optional)").performTextInput("123456789")
+        compose.onNodeWithText("Save person").assertIsEnabled().performClick()
+        compose.runOnIdle {
+            assertEquals(listOf("Priyanshi", "INSTAGRAM", "Priyanshi", "friend_01", "123456789", ""), saved)
+        }
     }
+
+    @Test fun whatsappStoresDeviceNameAndEnteredContactNumber() {
+        var saved: List<String>? = null
+        compose.setContent {
+            VeilTheme {
+                AddContactDialog(MessagingApp.WHATSAPP, onDismiss = {}) { label, app, sender, handle, id, number ->
+                    saved = listOf(label, app.name, sender, handle, id, number)
+                }
+            }
+        }
+        compose.onNodeWithText("Save person").assertIsNotEnabled()
+        compose.onNodeWithText("Name saved on device").performTextInput("Aditi")
+        compose.onNodeWithText("WhatsApp phone number (optional)").performTextInput("+91 98765 43210")
+        compose.onNodeWithText("Save person").assertIsEnabled().performClick()
+        compose.runOnIdle {
+            assertEquals(listOf("Aditi", "WHATSAPP", "Aditi", "", "", "+919876543210"), saved)
+        }
+    }
+
 
     @Test fun onboardingDoesNotOptInAnyPlatformByDefault() {
         var completed: Set<MessagingApp>? = null
