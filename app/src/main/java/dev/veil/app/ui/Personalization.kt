@@ -18,6 +18,9 @@ internal fun accentLabel(palette: AccentPalette): String = when (palette) {
     AccentPalette.PLUM -> "Plum"
     AccentPalette.AMBER -> "Amber"
     AccentPalette.SILVER -> "Silver"
+    AccentPalette.AURORA -> "Aurora"
+    AccentPalette.VIOLET -> "Violet"
+    AccentPalette.AZURE -> "Azure"
 }
 
 @OptIn(ExperimentalLayoutApi::class)
