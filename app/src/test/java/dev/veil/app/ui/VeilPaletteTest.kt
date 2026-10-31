@@ -11,15 +11,15 @@ import org.junit.Test
 
 class VeilPaletteTest {
     @Test fun newUsersStartWithAuroraButCanSelectDistinctPurpleAndBlue() {
-        assertEquals(AccentPalette.AURORA, VeilPreferences().accent)
-        assertNotEquals(veilColorScheme(false, AccentPalette.AURORA).primary,
-            veilColorScheme(false, AccentPalette.VIOLET).primary)
-        assertNotEquals(veilColorScheme(false, AccentPalette.VIOLET).primary,
-            veilColorScheme(false, AccentPalette.AZURE).primary)
+        assertEquals(AccentPalette.SUNSET, VeilPreferences().accent)
+        assertNotEquals(veilColorScheme(false, AccentPalette.SUNSET).primary,
+            veilColorScheme(false, AccentPalette.BLOSSOM).primary)
+        assertNotEquals(veilColorScheme(false, AccentPalette.BLOSSOM).primary,
+            veilColorScheme(false, AccentPalette.CHAMPAGNE).primary)
     }
 
     @Test fun newPalettesKeepReadablePrimaryButtonsInBothModes() {
-        listOf(AccentPalette.AURORA, AccentPalette.VIOLET, AccentPalette.AZURE).forEach { palette ->
+        listOf(AccentPalette.SUNSET, AccentPalette.BLOSSOM, AccentPalette.CHAMPAGNE).forEach { palette ->
             listOf(false, true).forEach { dark ->
                 val scheme = veilColorScheme(dark, palette)
                 assertTrue("${palette.name} dark=$dark primary contrast",
