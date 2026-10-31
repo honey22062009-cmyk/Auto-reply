@@ -87,7 +87,7 @@ internal fun effectiveReducedMotion(preference: Boolean): Boolean {
 internal val LocalGlassIntensity = staticCompositionLocalOf { .65f }
 
 @Composable
-fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.ROSE, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
+fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette = AccentPalette.AURORA, glassIntensity: Float = .65f, content: @Composable () -> Unit) {
     val dark = when (appearance) {
         Appearance.DARK -> true
         Appearance.LIGHT -> false
