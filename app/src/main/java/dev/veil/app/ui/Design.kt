@@ -140,7 +140,7 @@ fun VeilTheme(appearance: Appearance = Appearance.SYSTEM, palette: AccentPalette
     MaterialTheme(
         colorScheme = veilColorScheme(dark, palette),
         typography = Typography(
-            displaySmall = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Serif, fontSize = 38.sp, lineHeight = 44.sp),
+            displaySmall = MaterialTheme.typography.displaySmall.copy(fontFamily = FontFamily.Default, fontSize = 38.sp, lineHeight = 44.sp),
             headlineLarge = MaterialTheme.typography.headlineLarge.copy(fontSize = 32.sp, lineHeight = 39.sp, fontWeight = FontWeight.Normal, letterSpacing = (-0.8).sp),
             headlineMedium = MaterialTheme.typography.headlineMedium.copy(fontSize = 27.sp, lineHeight = 34.sp, letterSpacing = (-0.5).sp),
             titleLarge = MaterialTheme.typography.titleLarge.copy(fontSize = 21.sp, lineHeight = 28.sp, fontWeight = FontWeight.Medium),
