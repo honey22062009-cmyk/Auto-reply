@@ -381,8 +381,14 @@ private fun PriorityPlatformSection(
             }
         }
         contacts.forEach { contact ->
-            OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)) {
-                Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlinedCard(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.outlinedCardColors(containerColor = Color.Transparent)) {
+                Column(Modifier.fillMaxWidth()
+                    .background(Brush.linearGradient(listOf(
+                        colors.surface.copy(alpha = .89f),
+                        colors.primaryContainer.copy(alpha = .42f),
+                        colors.secondaryContainer.copy(alpha = .37f))))
+                    .padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         Box(Modifier.size(42.dp).background(colors.primaryContainer.copy(alpha = .5f), CircleShape),
                             contentAlignment = Alignment.Center) {
