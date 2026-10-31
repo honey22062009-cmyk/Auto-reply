@@ -1,12 +1,16 @@
 package dev.veil.app.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.*
@@ -46,10 +50,10 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
     }
     val today = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     ScreenBody {
-        PageHeading("Your conversations.\nA little more breathing room.", "A quieter space for your messages and replies.")
+        PageHeading("Your conversations.\nA little more breathing room.", "A calm command center for your private messages.")
         GlassPanel(intensity = prefs.glassIntensity, modifier = Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Eyebrow("Your companion")
+                Eyebrow("Your workspace")
                 Icon(Icons.Outlined.BlurOn, null, Modifier.size(26.dp), tint = MaterialTheme.colorScheme.primary)
             }
             Text(status, style = MaterialTheme.typography.headlineMedium)
@@ -110,9 +114,22 @@ internal fun HomeScreen(state: VeilUiState, onPause: (Boolean) -> Unit, onLab: (
 
 @Composable
 private fun Metric(value: String, label: String, modifier: Modifier = Modifier) {
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
-        Text(value, style = MaterialTheme.typography.headlineMedium)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(19.dp)
+    Column(
+        modifier
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(
+                colors.surface.copy(alpha = .87f),
+                colors.primaryContainer.copy(alpha = .57f),
+                colors.secondaryContainer.copy(alpha = .55f)
+            )))
+            .border(1.dp, colors.primary.copy(alpha = .14f), shape)
+            .padding(horizontal = 17.dp, vertical = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(value, style = MaterialTheme.typography.headlineMedium, color = colors.primary)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
     }
 }
 
